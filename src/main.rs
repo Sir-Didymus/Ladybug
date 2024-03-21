@@ -1,3 +1,12 @@
+use crate::bitboard::Bitboard;
+
+mod bitboard;
+mod square;
+mod position;
+mod file;
+mod rank;
+
 fn main() {
-    println!("Hello, world!");
+    let bitboard = Bitboard::new(9223372054036742144);
+    println!("{}",bitboard);
 }
