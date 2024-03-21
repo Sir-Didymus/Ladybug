@@ -26,7 +26,7 @@ impl Bitboard {
     }
 }
 
-/// Prints the bitboard with '0' marking empty squares and '1' marking occupied squares.
+/// Prints the bitboard with '.' marking empty squares and 'X' marking occupied squares.
 impl Display for Bitboard {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         let mut output: String = String::from("");
@@ -34,14 +34,14 @@ impl Display for Bitboard {
             output += format!("{}  ", rank + 1).as_str();
             for file in 0..NUM_FILES {
                 if self.is_square_set(Square::from_file_rank(File::from_index(file), Rank::from_index(rank))) {
-                    output += "1  ";
+                    output += "X  ";
                 } else {
-                    output += "0  ";
+                    output += ".  ";
                 }
             }
             output += "\n";
         }
-        output += "   A  B  C  D  E  F  G  H"; 
+        output += "   A  B  C  D  E  F  G  H";
         write!(f, "{}", output)
     }
 }
@@ -60,19 +60,19 @@ mod tests {
     #[test]
     fn bitboard_formats_correctly() {
         let bitboard = Bitboard::new(9223372071214514192); // Bitboard with squares h8, d5, e1 occupied
-        let expected_output = "8  0  0  0  0  0  0  0  1  \n7  0  0  0  0  0  0  0  0  \n6  0  0  0  0  0  0  0  0  \n5  0  0  0  1  0  0  0  0  \n4  0  0  0  0  0  0  0  0  \n3  0  0  0  0  0  0  0  0  \n2  0  0  0  0  0  0  0  0  \n1  0  0  0  0  1  0  0  0  \n   A  B  C  D  E  F  G  H";
+        let expected_output = "8  .  .  .  .  .  .  .  X  \n7  .  .  .  .  .  .  .  .  \n6  .  .  .  .  .  .  .  .  \n5  .  .  .  X  .  .  .  .  \n4  .  .  .  .  .  .  .  .  \n3  .  .  .  .  .  .  .  .  \n2  .  .  .  .  .  .  .  .  \n1  .  .  .  .  X  .  .  .  \n   A  B  C  D  E  F  G  H";
         assert_eq!(expected_output, format!("{}", bitboard));
 
         let bitboard = Bitboard::new(4611688217584861249); // Bitboard with squares g8, b6, d4, a1, g1 occupied
-        let expected_output = "8  0  0  0  0  0  0  1  0  \n7  0  0  0  0  0  0  0  0  \n6  0  1  0  0  0  0  0  0  \n5  0  0  0  0  0  0  0  0  \n4  0  0  0  1  0  0  0  0  \n3  0  0  0  0  0  0  0  0  \n2  0  0  0  0  0  0  0  0  \n1  1  0  0  0  0  0  1  0  \n   A  B  C  D  E  F  G  H";
+        let expected_output = "8  .  .  .  .  .  .  X  .  \n7  .  .  .  .  .  .  .  .  \n6  .  X  .  .  .  .  .  .  \n5  .  .  .  .  .  .  .  .  \n4  .  .  .  X  .  .  .  .  \n3  .  .  .  .  .  .  .  .  \n2  .  .  .  .  .  .  .  .  \n1  X  .  .  .  .  .  X  .  \n   A  B  C  D  E  F  G  H";
         assert_eq!(expected_output, format!("{}", bitboard));
 
         let bitboard = Bitboard::new(1126037345798144); // Bitboard with squares c7, f5, d2 occupied
-        let expected_output = "8  0  0  0  0  0  0  0  0  \n7  0  0  1  0  0  0  0  0  \n6  0  0  0  0  0  0  0  0  \n5  0  0  0  0  0  1  0  0  \n4  0  0  0  0  0  0  0  0  \n3  0  0  0  0  0  0  0  0  \n2  0  0  0  1  0  0  0  0  \n1  0  0  0  0  0  0  0  0  \n   A  B  C  D  E  F  G  H";
+        let expected_output = "8  .  .  .  .  .  .  .  .  \n7  .  .  X  .  .  .  .  .  \n6  .  .  .  .  .  .  .  .  \n5  .  .  .  .  .  X  .  .  \n4  .  .  .  .  .  .  .  .  \n3  .  .  .  .  .  .  .  .  \n2  .  .  .  X  .  .  .  .  \n1  .  .  .  .  .  .  .  .  \n   A  B  C  D  E  F  G  H";
         assert_eq!(expected_output, format!("{}", bitboard));
 
         let bitboard = Bitboard::new(9223372054036742144); // Bitboard with squares h8, c5, f3 occupied
-        let expected_output = "8  0  0  0  0  0  0  0  1  \n7  0  0  0  0  0  0  0  0  \n6  0  0  0  0  0  0  0  0  \n5  0  0  1  0  0  0  0  0  \n4  0  0  0  0  0  0  0  0  \n3  0  0  0  0  0  1  0  0  \n2  0  0  0  0  0  0  0  0  \n1  0  0  0  0  0  0  0  0  \n   A  B  C  D  E  F  G  H";
+        let expected_output = "8  .  .  .  .  .  .  .  X  \n7  .  .  .  .  .  .  .  .  \n6  .  .  .  .  .  .  .  .  \n5  .  .  X  .  .  .  .  .  \n4  .  .  .  .  .  .  .  .  \n3  .  .  .  .  .  X  .  .  \n2  .  .  .  .  .  .  .  .  \n1  .  .  .  .  .  .  .  .  \n   A  B  C  D  E  F  G  H";
         assert_eq!(expected_output, format!("{}", bitboard));
     }
 
