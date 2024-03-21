@@ -27,7 +27,14 @@ impl Bitboard {
 
     /// Sets the bit at the specified square to 1
     pub fn set_bit(&mut self, square: Square) {
-        self.value ^= 1 << square.index;
+        self.value |= 1 << square.index;
+    }
+
+    /// Sets the bit at the specified square to 0
+    pub fn pop_bit(&mut self, square: Square) { 
+        if self.get_bit(square) {
+            self.value ^= 1 << square.index;
+        }
     }
 }
 
@@ -92,6 +99,34 @@ mod tests {
                     assert!(!(1 << j) & bitboard.value > 0); // test that square is not set
                 }
             }
+        }
+    }
+
+    #[test]
+    fn set_bit_on_square_that_is_already_set_square_is_still_set() {
+        for i in 0..64 {
+            let mut bitboard = Bitboard::new(0);
+            bitboard.set_bit(Square::new(i));
+            bitboard.set_bit(Square::new(i));
+            assert!((1 << i) & bitboard.value > 0); // test that square is set - I avoid using get_square here so the tests are independent of each other
+        }
+    }
+
+    #[test]
+    fn pop_bit_unsets_bit_at_correct_square() {
+        for i in 0..64 {
+            let mut bitboard = Bitboard::new(0xffffffffffffffff); // bitboard with all bits set
+            bitboard.pop_bit(Square::new(i));
+            assert_eq!(0, (1 << i) & bitboard.value); // test that square is unset - I avoid using get_square here so the tests are independent of each other
+        }
+    }
+
+    #[test]
+    fn pop_bit_on_square_that_is_already_unset_square_is_still_unset() {
+        for i in 0..64 {
+            let mut bitboard = Bitboard::new(0);
+            bitboard.pop_bit(Square::new(i));
+            assert_eq!(0, (1 << i) & bitboard.value); // test that square is unset - I avoid using get_square here so the tests are independent of each other
         }
     }
 

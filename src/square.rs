@@ -2,6 +2,7 @@ use crate::file::File;
 use crate::rank::Rank;
 
 /// A square on the chessboard, represented by an index ranging from 0 to 63.
+#[derive(Copy, Clone)]
 pub struct Square {
     pub index: u8,
 }
