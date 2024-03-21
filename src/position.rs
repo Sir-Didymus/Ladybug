@@ -35,6 +35,6 @@ pub struct Position {
     /// Black's pawn bitboard
     black_pawn_bb: Bitboard,
 
-    /// If en passant is possible, this Option contains the target file for the en passant move
+    /// If en passant is possible, this Option contains the target file for the en passant move.
     en_passant: Option<File>,
 }
