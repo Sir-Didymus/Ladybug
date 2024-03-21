@@ -22,9 +22,9 @@ impl File {
         *self as u8
     }
 
-    /// Returns a file based on an index.
+    /// Returns a file based on the file's index.
     pub fn from_index(index: u8) -> File {
-        match index % 8 {
+        match index {
             0 => File::A,
             1 => File::B,
             2 => File::C,
@@ -33,7 +33,7 @@ impl File {
             5 => File::F,
             6 => File::G,
             7 => File::H,
-            _ => panic!("Invalid index"),
+            _ => panic!("Invalid index, should be between 0 and 7"),
         }
     }
 }
@@ -68,7 +68,13 @@ mod tests {
         assert_ne!(File::A, File::from_index(1));
         assert_ne!(File::B, File::from_index(6));
         assert_ne!(File::C, File::from_index(0));
-        
+
         assert!(!(File::A == File::B));
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid index, should be between 0 and 7")]
+    fn from_index_with_invalid_index_panics() {
+        File::from_index(9);
     }
 }
