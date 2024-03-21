@@ -2,7 +2,7 @@ use crate::bitboard::Bitboard;
 use crate::file::File;
 
 /// This struct represents a chess position. 
-/// It contains 12 bitboards, one for each peace for each color.
+/// It contains 12 bitboards, one for each piece for each color.
 /// It also contains information on whether en passant is possible.
 pub struct Position {
     /// White's king bitboard
