@@ -17,7 +17,7 @@ pub enum File {
 pub const NUM_FILES: u8 = 8;
 
 impl File {
-    /// Returns the index of the file, ranging from 0 (File A) to 7 (File H).
+    /// Returns the index of the file, ranging from 0 (file a) to 7 (file h).
     pub fn to_index(&self) -> u8 {
         *self as u8
     }
