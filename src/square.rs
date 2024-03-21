@@ -100,7 +100,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn new_constructs_square_with_correct_value() {
+    fn new_constructs_square_with_correct_index() {
         assert_eq!(0, Square::new(0).index);
         assert_eq!(30, Square::new(30).index);
         assert_eq!(54, Square::new(54).index);
