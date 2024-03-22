@@ -6,6 +6,7 @@ mod position;
 mod file;
 mod rank;
 mod pawn_attacks;
+mod color;
 
 fn main() {
     let bitboard = Bitboard::new(9223372054036742144);
