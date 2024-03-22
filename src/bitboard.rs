@@ -16,9 +16,14 @@ pub struct Bitboard {
 }
 
 impl Bitboard {
-    /// Constructs a new Bitboard from an u64.
+    /// Constructs a new bitboard from an u64.
     pub fn new(value: u64) -> Self {
         Self { value }
+    }
+
+    /// Returns a bitboard with the bit at the specified square set to 1
+    pub fn from_square(square: Square) -> Self {
+        Self { value: 1 << square.index }
     }
 
     /// Returns true if the bit at the specified square is set to 1, false if not.
@@ -68,6 +73,19 @@ mod tests {
         assert_eq!(0, Bitboard::new(0).value);
         assert_eq!(542525, Bitboard::new(542525).value);
         assert_eq!(18446744073709551615, Bitboard::new(18446744073709551615).value);
+    }
+    
+    #[test]
+    fn from_square_returns_bitboard_with_correct_bit_set() {
+        for i in 0..64 {
+            let bitboard = Bitboard::from_square(Square::new(i));
+            assert!((1 << i) & bitboard.value > 0); // test that square is set - I avoid using get_square here so the tests are independent of each other
+            for j in 0..64 { // test that all other squares are not set
+                if i != j {
+                    assert!(!(1 << j) & bitboard.value > 0); // test that square is not set
+                }
+            }
+        }
     }
 
     #[test]
