@@ -36,11 +36,24 @@ impl File {
             _ => unreachable!(),
         }
     }
+
+    /// Returns the file to the right.
+    pub fn right(&self) -> File {
+        File::from_index(self.to_index() + 1)
+    }
+
+    /// Returns the file to the left.
+    pub fn left(&self) -> File {
+        match self {
+            File::A => File::H, // Wrap around
+            other=> File::from_index(other.to_index() - 1)
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::file::File;
+    use crate::file::{File, NUM_FILES};
 
     #[test]
     fn to_index_returns_correct_index() {
@@ -75,5 +88,35 @@ mod tests {
     #[test]
     fn from_index_with_invalid_index_wraps_around() {
         assert_eq!(File::A, File::from_index(8));
+    }
+
+    #[test]
+    fn right_returns_file_to_the_right() {
+        assert_eq!(File::B, File::A.right());
+        assert_eq!(File::C, File::B.right());
+        assert_eq!(File::D, File::C.right());
+        assert_eq!(File::E, File::D.right());
+        assert_eq!(File::F, File::E.right());
+        assert_eq!(File::G, File::F.right());
+        assert_eq!(File::H, File::G.right());
+        assert_eq!(File::A, File::H.right());
+        for file_index in 0..NUM_FILES {
+            assert_eq!(File::from_index(file_index + 1), File::from_index(file_index).right())
+        }
+    }
+
+    #[test]
+    fn left_returns_file_to_the_left() {
+        assert_eq!(File::H, File::A.left());
+        assert_eq!(File::A, File::B.left());
+        assert_eq!(File::B, File::C.left());
+        assert_eq!(File::C, File::D.left());
+        assert_eq!(File::D, File::E.left());
+        assert_eq!(File::E, File::F.left());
+        assert_eq!(File::F, File::G.left());
+        assert_eq!(File::G, File::H.left());
+        for file_index in (1..NUM_FILES).rev() {
+            assert_eq!(File::from_index(file_index - 1), File::from_index(file_index).left())
+        }
     }
 }
