@@ -24,7 +24,7 @@ impl Rank {
 
     /// Returns a rank based on the rank's index.
     pub fn from_index(index: u8) -> Rank {
-        match index {
+        match index % 8{
             0 => Rank::First,
             1 => Rank::Second,
             2 => Rank::Third,
@@ -33,7 +33,7 @@ impl Rank {
             5 => Rank::Sixth,
             6 => Rank::Seventh,
             7 => Rank::Eighth,
-            _ => panic!("Invalid index, should be between 0 and 7"),
+            _ => unreachable!(),
         }
     }
 }
@@ -73,8 +73,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid index, should be between 0 and 7")]
-    fn from_index_with_invalid_index_panics() {
-        Rank::from_index(9);
+    fn from_index_with_invalid_index_wraps_around() {
+        assert_eq!(Rank::First, Rank::from_index(8));
     }
 }
