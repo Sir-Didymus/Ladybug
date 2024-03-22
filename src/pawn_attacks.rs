@@ -100,6 +100,8 @@ mod tests {
         for square_index in 0..NUM_SQUARES {
             // get attacks for square
             let attack_bb = get_attack_bb(Square::new(square_index), White);
+            // print attack_bb for debugging purposes
+            println!("{attack_bb}");
             // No white pawns on rank 8 allowed (promotion)
             if Square::new(square_index).get_rank() == Rank::Eighth {
                 assert_eq!(0, attack_bb.value);
@@ -132,6 +134,8 @@ mod tests {
         for square_index in 0..NUM_SQUARES {
             // get attacks for square
             let attack_bb = get_attack_bb(Square::new(square_index), Black);
+            // print attack_bb for debugging purposes
+            println!("{attack_bb}");
             // No black pawns on rank 1 allowed (promotion)
             if Square::new(square_index).get_rank() == Rank::First {
                 assert_eq!(0, attack_bb.value);
