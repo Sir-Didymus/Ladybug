@@ -1,6 +1,7 @@
 use crate::bitboard::Bitboard;
 use crate::color::Color;
-use crate::square::Square;
+use crate::color::Color::{Black, White};
+use crate::square::{NUM_SQUARES, Square};
 
 /// A bitboard with all bits set to 1, except for those on the A file.
 const NOT_A_FILE: Bitboard = Bitboard { value: 0xfefefefefefefefe };
@@ -10,17 +11,21 @@ const NOT_H_FILE: Bitboard = Bitboard { value: 0x7f7f7f7f7f7f7f7f };
 
 /// Generates the pawn attack table.
 pub fn generate_pawn_attacks() -> [[Bitboard; 64]; 2] {
-    let pawn_attacks = [[Bitboard::new(0); 64]; 2];
+    let mut pawn_attacks = [[Bitboard::new(0); 64]; 2];
+    for square_index in 0..NUM_SQUARES {
+        pawn_attacks[0][square_index as usize] = get_attack_bb(Square::new(square_index), White);
+        pawn_attacks[1][square_index as usize] = get_attack_bb(Square::new(square_index), Black);
+    }
     pawn_attacks
 }
 
-/// Returns the attack bitboard for the pawn of the specified color on the specified square.
+/// Returns the attack bitboard for a pawn of a specified color on a specified square.
 fn get_attack_bb(square: Square, color: Color) -> Bitboard {
     let mut attack_bb = Bitboard::new(0); // the result attack bitboard
     let pawn_bb = Bitboard::from_square(square); // bitboard with the square of the pawn set
 
     match color {
-        Color::White => {
+        White => {
             // Shift bitboards by offsets to get the attack map for the square.
             // Filter out over the edge captures with NOT_A_FILE and NOT_H_FILE masks.
             if ((pawn_bb.value << 7) & NOT_H_FILE.value) > 0 {
@@ -30,7 +35,7 @@ fn get_attack_bb(square: Square, color: Color) -> Bitboard {
                 attack_bb.value |= pawn_bb.value << 9; // Right target square
             }
         }
-        Color::Black => {
+        Black => {
             // Reversed offsets and NOT_FILE constants for black
             if ((pawn_bb.value >> 9) & NOT_H_FILE.value) > 0 {
                 attack_bb.value |= pawn_bb.value >> 9; // Left target square
@@ -40,7 +45,7 @@ fn get_attack_bb(square: Square, color: Color) -> Bitboard {
             }
         }
     }
-    
+
     attack_bb
 }
 
@@ -49,7 +54,7 @@ mod tests {
     use crate::bitboard::Bitboard;
     use crate::color::Color::{Black, White};
     use crate::file::{File, NUM_FILES};
-    use crate::pawn_attacks::{get_attack_bb, NOT_A_FILE, NOT_H_FILE};
+    use crate::pawn_attacks::{generate_pawn_attacks, get_attack_bb, NOT_A_FILE, NOT_H_FILE};
     use crate::rank::{NUM_RANKS, Rank};
     use crate::square::{NUM_SQUARES, Square};
 
@@ -81,6 +86,13 @@ mod tests {
                 assert!(NOT_H_FILE.get_bit(Square::from_file_rank(File::from_index(file_index), Rank::from_index(rank_index))));
             }
         }
+    }
+
+    #[test]
+    fn gen_pawn_attack_returns_array_with_correct_sizes() {
+        assert_eq!(2, generate_pawn_attacks().len());
+        assert_eq!(64, generate_pawn_attacks()[0].len());
+        assert_eq!(64, generate_pawn_attacks()[1].len());
     }
 
     #[test]
