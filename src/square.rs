@@ -7,6 +7,9 @@ pub struct Square {
     pub index: u8,
 }
 
+/// The number of squares on a chessboard.
+pub const NUM_SQUARES: u8 = 64;
+
 impl Square {
     /// Constructs a new square from a given index.
     pub fn new(index: u8) -> Self {
