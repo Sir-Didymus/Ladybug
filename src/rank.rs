@@ -36,11 +36,24 @@ impl Rank {
             _ => unreachable!(),
         }
     }
+    
+    /// Returns the rank above.
+    pub fn up(&self) -> Rank {
+        Rank::from_index(self.to_index() + 1)
+    }
+
+    /// Returns the rank below.
+    pub fn down(&self) -> Rank {
+        match self {
+            Rank::First => Rank::Eighth, // Wrap around
+            other => Rank::from_index(other.to_index() - 1)
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::rank::Rank;
+    use crate::rank::{NUM_RANKS, Rank};
 
     #[test]
     fn to_index_returns_correct_index() {
@@ -75,5 +88,35 @@ mod tests {
     #[test]
     fn from_index_with_invalid_index_wraps_around() {
         assert_eq!(Rank::First, Rank::from_index(8));
+    }
+
+    #[test]
+    fn up_returns_rank_above() {
+        assert_eq!(Rank::Second, Rank::First.up());
+        assert_eq!(Rank::Third, Rank::Second.up());
+        assert_eq!(Rank::Fourth, Rank::Third.up());
+        assert_eq!(Rank::Fifth, Rank::Fourth.up());
+        assert_eq!(Rank::Sixth, Rank::Fifth.up());
+        assert_eq!(Rank::Seventh, Rank::Sixth.up());
+        assert_eq!(Rank::Eighth, Rank::Seventh.up());
+        assert_eq!(Rank::First, Rank::Eighth.up());
+        for rank_index in (0..NUM_RANKS).rev() {
+            assert_eq!(Rank::from_index(rank_index + 1), Rank::from_index(rank_index).up())
+        }
+    }
+
+    #[test]
+    fn down_returns_rank_below() {
+        assert_eq!(Rank::Second, Rank::First.up());
+        assert_eq!(Rank::Third, Rank::Second.up());
+        assert_eq!(Rank::Fourth, Rank::Third.up());
+        assert_eq!(Rank::Fifth, Rank::Fourth.up());
+        assert_eq!(Rank::Sixth, Rank::Fifth.up());
+        assert_eq!(Rank::Seventh, Rank::Sixth.up());
+        assert_eq!(Rank::Eighth, Rank::Seventh.up());
+        assert_eq!(Rank::First, Rank::Eighth.up());
+        for rank_index in (1..NUM_RANKS).rev() {
+            assert_eq!(Rank::from_index(rank_index - 1), Rank::from_index(rank_index).down())
+        }
     }
 }
