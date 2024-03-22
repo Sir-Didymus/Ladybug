@@ -1,4 +1,5 @@
 use crate::bitboard::Bitboard;
+use crate::color::Color;
 use crate::file::File;
 
 /// This struct represents a chess position. 
@@ -37,4 +38,7 @@ pub struct Position {
 
     /// If en passant is possible, this Option contains the target file for the en passant move.
     en_passant: Option<File>,
+    
+    /// The color whose turn it is.
+    color_to_move: Color,
 }
