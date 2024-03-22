@@ -5,7 +5,6 @@ mod square;
 mod position;
 mod file;
 mod rank;
-mod pawn_attacks;
 mod color;
 
 fn main() {
