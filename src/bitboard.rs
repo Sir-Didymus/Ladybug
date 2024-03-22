@@ -10,6 +10,7 @@ use crate::square::{Square};
 /// H8 has an index of 63, and is represented by the most significant bit of the integer.
 ///
 /// This mapping is called [Little-Endian Rank-File Mapping](https://www.chessprogramming.org/Square_Mapping_Considerations#Little-Endian_Rank-File_Mapping)
+#[derive(Copy, Clone)]
 pub struct Bitboard {
     pub value: u64,
 }
