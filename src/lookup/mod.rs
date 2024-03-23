@@ -7,6 +7,7 @@ use crate::board::bitboard::Bitboard;
 pub mod lookup_table;
 pub mod pawn_attacks;
 pub mod knight_attacks;
+mod king_attacks;
 
 // ---------------------------------------------------------------
 // Constants used to mask the attack bitboards for various pieces
