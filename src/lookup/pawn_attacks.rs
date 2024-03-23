@@ -2,12 +2,7 @@ use crate::board::bitboard::Bitboard;
 use crate::board::color::Color;
 use crate::board::color::Color::{Black, White};
 use crate::board::square::{NUM_SQUARES, Square};
-
-/// A bitboard with all bits set to 1, except for those on the A file.
-const NOT_A_FILE: Bitboard = Bitboard { value: 0xfefefefefefefefe };
-
-/// A bitboard with all bits set to 1, except for those on the H file.
-const NOT_H_FILE: Bitboard = Bitboard { value: 0x7f7f7f7f7f7f7f7f };
+use crate::lookup::{NOT_A_FILE, NOT_H_FILE};
 
 /// Generates the pawn attack table.
 pub fn generate_pawn_attacks() -> [[Bitboard; 64]; 2] {
@@ -53,40 +48,10 @@ fn get_attack_bb(square: Square, color: Color) -> Bitboard {
 mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::color::Color::{Black, White};
-    use crate::board::file::{File, NUM_FILES};
-    use crate::lookup::pawn_attacks::{generate_pawn_attacks, get_attack_bb, NOT_A_FILE, NOT_H_FILE};
-    use crate::board::rank::{NUM_RANKS, Rank};
+    use crate::board::file::{File};
+    use crate::lookup::pawn_attacks::{generate_pawn_attacks, get_attack_bb};
+    use crate::board::rank::{Rank};
     use crate::board::square::{NUM_SQUARES, Square};
-
-    #[test]
-    fn not_a_file_squares_on_a_file_not_set() {
-        // verify that A file bits are not set
-        for rank_index in Rank::First.to_index()..NUM_RANKS {
-            assert!(!NOT_A_FILE.get_bit(Square::from_file_rank(File::A, Rank::from_index(rank_index))));
-        }
-
-        // verify that all other bits are set
-        for file_index in File::B.to_index()..NUM_FILES {
-            for rank_index in 0..NUM_RANKS {
-                assert!(NOT_A_FILE.get_bit(Square::from_file_rank(File::from_index(file_index), Rank::from_index(rank_index))));
-            }
-        }
-    }
-
-    #[test]
-    fn not_h_file_squares_on_h_file_not_set() {
-        // verify that H file bits are not set
-        for rank_index in Rank::First.to_index()..NUM_RANKS {
-            assert!(!NOT_H_FILE.get_bit(Square::from_file_rank(File::H, Rank::from_index(rank_index))));
-        }
-
-        // verify that all other bits are set
-        for file_index in File::A.to_index()..(NUM_FILES - 1) {
-            for rank_index in 0..NUM_RANKS {
-                assert!(NOT_H_FILE.get_bit(Square::from_file_rank(File::from_index(file_index), Rank::from_index(rank_index))));
-            }
-        }
-    }
 
     #[test]
     fn gen_pawn_attack_returns_array_with_correct_sizes() {
