@@ -54,7 +54,7 @@ mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::color::Color::{Black, White};
     use crate::board::file::{File, NUM_FILES};
-    use crate::pawn_attacks::{generate_pawn_attacks, get_attack_bb, NOT_A_FILE, NOT_H_FILE};
+    use crate::lookup::pawn_attacks::{generate_pawn_attacks, get_attack_bb, NOT_A_FILE, NOT_H_FILE};
     use crate::board::rank::{NUM_RANKS, Rank};
     use crate::board::square::{NUM_SQUARES, Square};
 

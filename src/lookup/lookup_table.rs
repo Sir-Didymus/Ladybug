@@ -1,5 +1,5 @@
 use crate::board::bitboard::Bitboard;
-use crate::pawn_attacks;
+use crate::lookup::pawn_attacks;
 
 /// This is the lookup table for the move generator.
 pub struct LookupTable {
