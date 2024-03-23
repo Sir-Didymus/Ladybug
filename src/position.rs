@@ -1,6 +1,6 @@
-use crate::bitboard::Bitboard;
-use crate::color::Color;
-use crate::file::File;
+use crate::board::bitboard::Bitboard;
+use crate::board::color::Color;
+use crate::board::file::File;
 
 /// This struct represents a chess position. 
 /// It contains 12 bitboards, one for each piece for each color.

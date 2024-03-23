@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
-use crate::file::{File, NUM_FILES};
-use crate::rank::{NUM_RANKS, Rank};
-use crate::square::{Square};
+use crate::board::file::{File, NUM_FILES};
+use crate::board::rank::{NUM_RANKS, Rank};
+use crate::board::square::{Square};
 
 /// A bitboard representing the state of the board for one type of piece for one color.
 ///

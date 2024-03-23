@@ -53,7 +53,8 @@ impl File {
 
 #[cfg(test)]
 mod tests {
-    use crate::file::{File, NUM_FILES};
+    use crate::board::file::File;
+    use crate::board::file::{NUM_FILES};
 
     #[test]
     fn to_index_returns_correct_index() {

@@ -1,7 +1,7 @@
-use crate::bitboard::Bitboard;
-use crate::color::Color;
-use crate::color::Color::{Black, White};
-use crate::square::{NUM_SQUARES, Square};
+use crate::board::bitboard::Bitboard;
+use crate::board::color::Color;
+use crate::board::color::Color::{Black, White};
+use crate::board::square::{NUM_SQUARES, Square};
 
 /// A bitboard with all bits set to 1, except for those on the A file.
 const NOT_A_FILE: Bitboard = Bitboard { value: 0xfefefefefefefefe };
@@ -51,12 +51,12 @@ fn get_attack_bb(square: Square, color: Color) -> Bitboard {
 
 #[cfg(test)]
 mod tests {
-    use crate::bitboard::Bitboard;
-    use crate::color::Color::{Black, White};
-    use crate::file::{File, NUM_FILES};
+    use crate::board::bitboard::Bitboard;
+    use crate::board::color::Color::{Black, White};
+    use crate::board::file::{File, NUM_FILES};
     use crate::pawn_attacks::{generate_pawn_attacks, get_attack_bb, NOT_A_FILE, NOT_H_FILE};
-    use crate::rank::{NUM_RANKS, Rank};
-    use crate::square::{NUM_SQUARES, Square};
+    use crate::board::rank::{NUM_RANKS, Rank};
+    use crate::board::square::{NUM_SQUARES, Square};
 
     #[test]
     fn not_a_file_squares_on_a_file_not_set() {

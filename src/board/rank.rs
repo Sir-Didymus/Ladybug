@@ -53,7 +53,7 @@ impl Rank {
 
 #[cfg(test)]
 mod tests {
-    use crate::rank::{NUM_RANKS, Rank};
+    use crate::board::rank::{NUM_RANKS, Rank};
 
     #[test]
     fn to_index_returns_correct_index() {

@@ -1,5 +1,5 @@
-use crate::file::File;
-use crate::rank::Rank;
+use crate::board::file::File;
+use crate::board::rank::Rank;
 
 /// A square on the chessboard, represented by an index ranging from 0 to 63.
 #[derive(Copy, Clone)]
@@ -99,8 +99,8 @@ pub const H8: Square = Square { index: 63 };
 
 #[cfg(test)]
 mod tests {
-    use crate::file::File;
-    use crate::rank::Rank;
+    use crate::board::file::File;
+    use crate::board::rank::Rank;
     use super::*;
 
     #[test]
