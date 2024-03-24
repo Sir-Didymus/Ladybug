@@ -137,7 +137,7 @@ mod tests {
     }
 
     #[test]
-    fn get_occupancy_bb_returns_bitboard_with_a_h_files_and_first_second_rank_and_bishop_square_unset() {
+    fn get_occupancy_bb_returns_bitboard_with_a_h_files_and_first_eighth_rank_and_bishop_square_unset() {
         for square_index in 0..NUM_SQUARES {
             // get occupancies for square
             let occupancy_bb = get_occupancy_bb(Square::new(square_index));
