@@ -9,7 +9,8 @@ pub mod pawn_attacks;
 pub mod knight_attacks;
 pub mod king_attacks;
 pub mod bishop_occupancies;
-mod rook_occupancies;
+pub mod rook_occupancies;
+pub mod bishop_attacks;
 
 // ---------------------------------------------------------------
 // Constants used to mask the attack bitboards for various pieces
