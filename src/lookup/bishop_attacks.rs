@@ -120,6 +120,5 @@ mod tests {
         assert_eq!(0x10a000a000000000, get_attack_bb(G6, Bitboard::new(0x2000000000)).value);
         assert_eq!(0xa000a000000000, get_attack_bb(G6, Bitboard::new(0xa000a000000000)).value);
         assert_eq!(0x14224080000000, get_attack_bb(D8, Bitboard::new(0x20080000000)).value);
-
     }
 }
