@@ -35,13 +35,18 @@ impl LookupTable {
     pub fn get_pawn_attacks(&self, square: Square, color: Color) -> Bitboard {
         self.pawn_attacks[color.to_index() as usize][square.index as usize]
     }
+
+    /// Returns the attack bitboard for a knight of on the specified square.
+    pub fn get_knight_attacks(&self, square: Square) -> Bitboard {
+        self.knight_attacks[square.index as usize]
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::color::Color::{Black, White};
-    use crate::board::square::{B5, C2, F7, H1, H5};
+    use crate::board::square::{A1, A8, B5, B7, C2, D8, E4, F4, F7, G6, H1, H5};
     use crate::lookup::lookup_table::LookupTable;
 
     #[test]
@@ -68,5 +73,20 @@ mod tests {
         assert_eq!(0x5000000, lookup_table.get_pawn_attacks(B5, Black).value);
         assert_eq!(0x500000000000, lookup_table.get_pawn_attacks(F7, Black).value);
         assert_eq!(0x40000000, lookup_table.get_pawn_attacks(H5, Black).value);
+    }
+
+    #[test]
+    fn get_knight_attacks_returns_bitboard_with_attacked_bits_set() {
+        let mut lookup_table = LookupTable::default();
+        lookup_table.initialize_tables();
+
+        // Testing the get_knight_attacks method using fixed hex values for the result bitboard.
+        assert_eq!(0xa110011, lookup_table.get_knight_attacks(C2).value);
+        assert_eq!(0x284400442800, lookup_table.get_knight_attacks(E4).value);
+        assert_eq!(0x800080500000000, lookup_table.get_knight_attacks(B7).value);
+        assert_eq!(0x402000, lookup_table.get_knight_attacks(H1).value);
+        assert_eq!(0xa0100010a0000000, lookup_table.get_knight_attacks(G6).value);
+        assert_eq!(0x22140000000000, lookup_table.get_knight_attacks(D8).value);
+        assert_eq!(0x508800885000, lookup_table.get_knight_attacks(F4).value);
     }
 }
