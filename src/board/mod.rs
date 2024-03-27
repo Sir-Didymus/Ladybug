@@ -8,3 +8,4 @@ pub mod file;
 pub mod  rank;
 pub mod square;
 pub mod castling_rights;
+pub mod piece;
