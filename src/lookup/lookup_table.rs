@@ -52,6 +52,11 @@ impl LookupTable {
         rook_attacks::get_attack_bb(square, blockers)
     }
 
+    /// Returns the attack bitboard for a queen on the specified square and the specified blocker bitboard.
+    pub fn get_queen_attacks(&self, square: Square, blockers: Bitboard) -> Bitboard {
+        Bitboard::new(self.get_rook_attacks(square, blockers).value | self.get_bishop_attacks(square, blockers).value)
+    }
+
     /// Returns the attack bitboard for a king of on the specified square.
     pub fn get_king_attacks(&self, square: Square) -> Bitboard {
         self.king_attacks[square.index as usize]
@@ -62,7 +67,7 @@ impl LookupTable {
 mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::color::Color::{Black, White};
-    use crate::board::square::{B2, B5, B7, B8, C2, C3, C4, D4, D8, E4, E5, F4, F7, F8, G2, G6, G7, H1, H5, H7, H8};
+    use crate::board::square::{A5, B2, B5, B7, B8, C2, C3, C4, C7, D4, D8, E4, E5, F4, F7, F8, G2, G6, G7, H1, H5, H7, H8, NUM_SQUARES, Square};
     use crate::lookup::lookup_table::LookupTable;
 
     #[test]
@@ -139,6 +144,33 @@ mod tests {
         assert_eq!(0xdf20202020202020, lookup_table.get_rook_attacks(F8, Bitboard::new(0)).value);
         assert_eq!(0x5f20202020200000, lookup_table.get_rook_attacks(F8, Bitboard::new(0x4100000000200000)).value);
         assert_eq!(0x40404040bc40, lookup_table.get_rook_attacks(G2, Bitboard::new(0x400000008440)).value);
+    }
+
+    #[test]
+    fn get_queen_attacks_returns_bitboard_with_attacked_bits_set() {
+        let mut lookup_table = LookupTable::default();
+        lookup_table.initialize_tables();
+
+        for square_index in 0..NUM_SQUARES {
+            // get attacks for square
+            let attack_bb = lookup_table.get_queen_attacks(Square::new(square_index), Bitboard::new(0));
+            // print attack_bb with empty blockers for debugging purposes
+            println!("{attack_bb}");
+        }
+
+        // Testing the get_queen_attacks method using fixed hex values for the result and blocker bitboards.
+        assert_eq!(0xefb0e1524448404, lookup_table.get_queen_attacks(C7, Bitboard::new(0)).value);
+        assert_eq!(0xe0a0e0000000000, lookup_table.get_queen_attacks(C7, Bitboard::new(0xefb0e1524448404)).value);
+        assert_eq!(0xefb0e1524040404, lookup_table.get_queen_attacks(C7, Bitboard::new(0x80000120000000)).value);
+        assert_eq!(0x88492a1cf71c2a49, lookup_table.get_queen_attacks(D4, Bitboard::new(0)).value);
+        assert_eq!(0x81c341c2848, lookup_table.get_queen_attacks(D4, Bitboard::new(0xefb0e1524448404)).value);
+        assert_eq!(0x7fc0a09088848281, lookup_table.get_queen_attacks(H8, Bitboard::new(0)).value);
+        assert_eq!(0x7fc0a09088808080, lookup_table.get_queen_attacks(H8, Bitboard::new(0x8000000)).value);
+        assert_eq!(0x60c0a09088800000, lookup_table.get_queen_attacks(H8, Bitboard::new(0x2000000008800000)).value);
+        assert_eq!(0x4142444850e0bfe0, lookup_table.get_queen_attacks(G2, Bitboard::new(0)).value);
+        assert_eq!(0x4040404850e0bfe0, lookup_table.get_queen_attacks(G2, Bitboard::new(0x800000080)).value);
+        assert_eq!(0x90503fe03050911, lookup_table.get_queen_attacks(A5, Bitboard::new(0)).value);
+        assert_eq!(0x90503fe03050901, lookup_table.get_queen_attacks(A5, Bitboard::new(0x800)).value);
     }
 
     #[test]
