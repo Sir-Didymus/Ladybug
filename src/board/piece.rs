@@ -9,6 +9,9 @@ pub enum Piece {
     King = 5,
 }
 
+/// The number of different pieces.
+pub const NUM_PIECES: u8 = 6;
+
 impl Piece {
     /// Returns the index of the piece.
     pub fn to_index(&self) -> u8 {
