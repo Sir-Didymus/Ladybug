@@ -1,15 +1,15 @@
 /// The two colors in the game of chess.
 #[derive(Copy, Clone)]
 pub enum Color {
-    White,
-    Black,
+    White = 0,
+    Black = 1,
 }
 
 /// The number of colors.
 pub const NUM_COLORS: u8 = 2;
 
 impl Color {
-    /// Returns the index of the color: 0 for White and 1 for Black.
+    /// Returns the index of the color.
     pub fn to_index(&self) -> u8 {
         *self as u8
     }
