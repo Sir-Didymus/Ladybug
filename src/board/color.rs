@@ -1,5 +1,5 @@
 /// The two colors in the game of chess.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Color {
     White = 0,
     Black = 1,

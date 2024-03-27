@@ -1,6 +1,7 @@
 /// Contains information on what (if any) castling rights a player has.
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum CastlingRights {
-    None,
+    NoRights,
     KingSide,
     QueenSide,
     Both,
