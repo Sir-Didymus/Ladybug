@@ -1,6 +1,4 @@
-/// This enum represents a rank on a chessboard.
-///
-/// Can be compared using "==", thanks to the [PartialEq](https://doc.rust-lang.org/std/cmp/trait.PartialEq.html) trait.
+/// Represents a rank on a chessboard.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Rank {
     First = 0,
