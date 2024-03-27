@@ -18,3 +18,18 @@ impl Piece {
         *self as u8
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::board::piece::Piece::*;
+
+    #[test]
+    fn to_index_returns_correct_index() {
+        assert_eq!(0, Pawn.to_index());
+        assert_eq!(1, Knight.to_index());
+        assert_eq!(2, Bishop.to_index());
+        assert_eq!(3, Rook.to_index());
+        assert_eq!(4, Queen.to_index());
+        assert_eq!(5, King.to_index());
+    }
+}
