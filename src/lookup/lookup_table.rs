@@ -1,7 +1,7 @@
 use crate::board::bitboard::Bitboard;
 use crate::board::color::Color;
 use crate::board::square::Square;
-use crate::lookup::{king_attacks, knight_attacks};
+use crate::lookup::{king_attacks, knight_attacks, rook_attacks};
 use crate::lookup::pawn_attacks;
 use crate::lookup::bishop_attacks;
 
@@ -37,7 +37,7 @@ impl LookupTable {
         self.pawn_attacks[color.to_index() as usize][square.index as usize]
     }
 
-    /// Returns the attack bitboard for a knight of on the specified square.
+    /// Returns the attack bitboard for a knight on the specified square.
     pub fn get_knight_attacks(&self, square: Square) -> Bitboard {
         self.knight_attacks[square.index as usize]
     }
@@ -45,6 +45,11 @@ impl LookupTable {
     /// Returns the attack bitboard for a bishop on the specified square and the specified blocker bitboard.
     pub fn get_bishop_attacks(&self, square: Square, blockers: Bitboard) -> Bitboard {
         bishop_attacks::get_attack_bb(square, blockers)
+    }
+
+    /// Returns the attack bitboard for a rook on the specified square and the specified blocker bitboard.
+    pub fn get_rook_attacks(&self, square: Square, blockers: Bitboard) -> Bitboard {
+        rook_attacks::get_attack_bb(square, blockers)
     }
 
     /// Returns the attack bitboard for a king of on the specified square.
@@ -57,7 +62,7 @@ impl LookupTable {
 mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::color::Color::{Black, White};
-    use crate::board::square::{B2, B5, B7, B8, C2, C3, C4, D4, D8, E4, E5, F4, F7, G6, G7, H1, H5, H7, H8};
+    use crate::board::square::{B2, B5, B7, B8, C2, C3, C4, D4, D8, E4, E5, F4, F7, F8, G2, G6, G7, H1, H5, H7, H8};
     use crate::lookup::lookup_table::LookupTable;
 
     #[test]
@@ -118,6 +123,22 @@ mod tests {
         assert_eq!(0x20100a000a1020, lookup_table.get_bishop_attacks(C4, Bitboard::new(0x20000200020020)).value);
         assert_eq!(0x14224180000000, lookup_table.get_bishop_attacks(D8, Bitboard::new(0)).value);
         assert_eq!(0x14220100000000, lookup_table.get_bishop_attacks(D8, Bitboard::new(0x200000000000)).value);
+    }
+
+    #[test]
+    fn get_rook_attacks_returns_bitboard_with_attacked_bits_set() {
+        let mut lookup_table = LookupTable::default();
+        lookup_table.initialize_tables();
+
+        // Testing the get_rook_attacks method using fixed hex values for the result and blocker bitboards.
+        assert_eq!(0x101010ef10101010, lookup_table.get_rook_attacks(E5, Bitboard::new(0)).value);
+        assert_eq!(0x101010ef10100000, lookup_table.get_rook_attacks(E5, Bitboard::new(0x1000008100100000)).value);
+        assert_eq!(0x102810000000, lookup_table.get_rook_attacks(E5, Bitboard::new(0x102810000000)).value);
+        assert_eq!(0x4040404fb040404, lookup_table.get_rook_attacks(C4, Bitboard::new(0)).value);
+        assert_eq!(0x40404047b040404, lookup_table.get_rook_attacks(C4, Bitboard::new(0x400000041000004)).value);
+        assert_eq!(0xdf20202020202020, lookup_table.get_rook_attacks(F8, Bitboard::new(0)).value);
+        assert_eq!(0x5f20202020200000, lookup_table.get_rook_attacks(F8, Bitboard::new(0x4100000000200000)).value);
+        assert_eq!(0x40404040bc40, lookup_table.get_rook_attacks(G2, Bitboard::new(0x400000008440)).value);
     }
 
     #[test]

@@ -4,7 +4,7 @@ use crate::board::rank::Rank;
 use crate::board::square::Square;
 
 /// Returns the attack bitboard for a rook, depending on the rook's square and the blocker bitboard.
-fn get_attack_bb(square: Square, blockers: Bitboard) -> Bitboard {
+pub fn get_attack_bb(square: Square, blockers: Bitboard) -> Bitboard {
     let mut attack_bb = Bitboard::new(0);
 
     // file on which the rook resides
@@ -101,7 +101,7 @@ mod tests {
 
         // If I wanted to test for every square like I did for pawns, I'd basically have to rewrite the get_attack_bb function in here again, just for this test.
         // Also, the number of test cases would be very large, since in this case blockers play a role, too.
-        // So I will only test for a few exemplary cases (using hard-coded hex values for the result and blocker bitboard).
+        // So I will only test for a few exemplary cases (using hard-coded hex values for the result and blocker bitboards).
 
         assert_eq!(0x1010101010101fe, get_attack_bb(A1, Bitboard::new(0)).value);
         assert_eq!(0x1010101010101fe, get_attack_bb(A1, Bitboard::new(0x100000000000080)).value);
