@@ -51,9 +51,9 @@ mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::castling_rights::CastlingRights::NoRights;
     use crate::board::color::Color::{Black, White};
-    use crate::board::piece::Piece::{Knight, Queen};
+    use crate::board::piece::Piece::{Bishop, King, Knight, Pawn, Queen, Rook};
     use crate::board::position::Position;
-    use crate::board::square::{E4, H7};
+    use crate::board::square::{E4, G3, H7};
 
     #[test]
     fn default_returns_position_with_default_values() {
@@ -79,5 +79,20 @@ mod tests {
         
         position.set_piece(Knight, Black, H7);
         assert!(position.pieces[Black.to_index() as usize][Knight.to_index() as usize].get_bit(H7));
+        
+        let position_before = Position::default();
+        let mut position_after = position_before;
+        position_after.set_piece(Bishop, Black, G3);
+
+        // test that black's knight bitboard changed
+        assert_ne!(position_before.pieces[Black.to_index() as usize][Bishop.to_index() as usize], position_after.pieces[Black.to_index() as usize][Bishop.to_index() as usize]);
+        
+        // test that other bitboards are still the same
+        assert_eq!(position_before.pieces[White.to_index() as usize], position_after.pieces[White.to_index() as usize]);
+        assert_eq!(position_before.pieces[Black.to_index() as usize][Pawn.to_index() as usize], position_after.pieces[Black.to_index() as usize][Pawn.to_index() as usize]);
+        assert_eq!(position_before.pieces[Black.to_index() as usize][Knight.to_index() as usize], position_after.pieces[Black.to_index() as usize][Knight.to_index() as usize]);
+        assert_eq!(position_before.pieces[Black.to_index() as usize][Rook.to_index() as usize], position_after.pieces[Black.to_index() as usize][Rook.to_index() as usize]);
+        assert_eq!(position_before.pieces[Black.to_index() as usize][Queen.to_index() as usize], position_after.pieces[Black.to_index() as usize][Queen.to_index() as usize]);
+        assert_eq!(position_before.pieces[Black.to_index() as usize][King.to_index() as usize], position_after.pieces[Black.to_index() as usize][King.to_index() as usize]);
     }
 }
