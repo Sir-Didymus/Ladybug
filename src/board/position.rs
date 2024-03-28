@@ -9,6 +9,7 @@ use crate::board::file::File;
 /// It contains 12 bitboards, one for each piece for each color.
 /// It also contains information on whether en passant is possible, whose side it is to move,
 /// and the castling rights for each player.
+#[derive(Copy, Clone)]
 pub struct Position {
     /// Pawn bitboards for both White and Black.
     pawns: [Bitboard; 2],
@@ -61,7 +62,7 @@ mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::castling_rights::CastlingRights::NoRights;
     use crate::board::color::Color::White;
-    use crate::position::Position;
+    use crate::board::position::Position;
 
     #[test]
     fn default_returns_position_with_default_values() {
