@@ -12,6 +12,7 @@ pub mod square;
 pub mod castling_rights;
 pub mod piece;
 pub mod position;
+pub mod fen;
 
 /// The board struct holds the current position of the board.
 /// It also keeps track of the half-move (ply) history, the full move count, the number of reversible half-moves (50 move rule),
