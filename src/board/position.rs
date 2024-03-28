@@ -4,6 +4,8 @@ use crate::board::castling_rights::CastlingRights::NoRights;
 use crate::board::color::{Color};
 use crate::board::color::Color::White;
 use crate::board::file::File;
+use crate::board::piece::Piece;
+use crate::board::square::Square;
 
 /// This struct uniquely encodes a chess position.
 /// It contains 12 bitboards, one for each piece for each color.
@@ -37,12 +39,21 @@ impl Default for Position {
     }
 }
 
+impl Position  {
+    /// Sets a piece of the specified color on the specified square.
+    pub fn set_piece(&mut self, piece: Piece, color: Color, square: Square) {
+        self.pieces[color.to_index() as usize][piece.to_index() as usize].set_bit(square);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::castling_rights::CastlingRights::NoRights;
-    use crate::board::color::Color::White;
+    use crate::board::color::Color::{Black, White};
+    use crate::board::piece::Piece::{Knight, Queen};
     use crate::board::position::Position;
+    use crate::board::square::{E4, H7};
 
     #[test]
     fn default_returns_position_with_default_values() {
@@ -51,5 +62,22 @@ mod tests {
         assert_eq!([NoRights; 2], position.castling_rights);
         assert_eq!(None, position.en_passant);
         assert_eq!(White, position.color_to_move);
+    }
+    
+    #[test]
+    pub fn set_piece_sets_piece_on_correct_square_and_correct_bitboard() {
+        let mut position = Position::default();
+        
+        position.set_piece(Knight, White, E4);
+        assert!(position.pieces[White.to_index() as usize][Knight.to_index() as usize].get_bit(E4));
+        assert!(!position.pieces[White.to_index() as usize][Knight.to_index() as usize].get_bit(H7));
+        
+        position.set_piece(Knight, White, H7);
+        assert!(position.pieces[White.to_index() as usize][Knight.to_index() as usize].get_bit(H7));
+        assert!(!position.pieces[Black.to_index() as usize][Knight.to_index() as usize].get_bit(H7));
+        assert!(!position.pieces[White.to_index() as usize][Queen.to_index() as usize].get_bit(H7));
+        
+        position.set_piece(Knight, Black, H7);
+        assert!(position.pieces[Black.to_index() as usize][Knight.to_index() as usize].get_bit(H7));
     }
 }
