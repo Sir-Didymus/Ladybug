@@ -16,6 +16,11 @@ impl Square {
         Self { index }
     }
 
+    /// Constructs a new square based on rank and file
+    pub fn from_file_rank(file: File, rank: Rank) -> Self {
+        Self { index : 8*rank.to_index() + file.to_index() }
+    }
+
     /// Constructs a new square from a string.
     pub fn from_string(square_str: &str) -> Result<Self, String> {
         // square_str can not be longer than 2
@@ -64,11 +69,6 @@ impl Square {
     /// Returns the rank of the square.
     pub fn get_rank(&self) -> Rank {
         Rank::from_index(self.index / 8)
-    }
-
-    /// Constructs a new square based on rank and file
-    pub fn from_file_rank(file: File, rank: Rank) -> Self {
-        Self { index : 8*rank.to_index() + file.to_index() }
     }
 }
 
