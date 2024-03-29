@@ -16,7 +16,7 @@ impl Square {
         Self { index }
     }
 
-    /// Constructs a new square based on rank and file
+    /// Constructs a new square based on rank and file.
     pub fn from_file_rank(file: File, rank: Rank) -> Self {
         Self { index : 8*rank.to_index() + file.to_index() }
     }
