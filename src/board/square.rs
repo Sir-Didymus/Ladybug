@@ -2,7 +2,7 @@ use crate::board::file::File;
 use crate::board::rank::Rank;
 
 /// A square on the chessboard, represented by an index ranging from 0 to 63.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Square {
     pub index: u8,
 }
@@ -14,6 +14,46 @@ impl Square {
     /// Constructs a new square from a given index.
     pub fn new(index: u8) -> Self {
         Self { index }
+    }
+
+    /// Constructs a new square from a string.
+    pub fn from_string(square_str: &str) -> Result<Self, String> {
+        // square_str can not be longer than 2
+        if square_str.len() != 2 {
+            return Err(String::from("Invalid square string"));
+        }
+        
+        // get chars
+        let chars: Vec<char> = square_str.chars().collect();
+        
+        // first char must be ascii a-h
+        match chars[0] {
+            file_char if file_char.is_ascii_lowercase() && ('a'..='h').contains(&file_char) => {}
+            _other => return Err(String::from("Invalid square string")) 
+        }
+        
+        // second char must be a number 1-8
+        match chars[1] {
+            rank_char if rank_char.is_numeric() && ('1'..='8').contains(&rank_char) => {}
+            _other => return Err(String::from("Invalid square string"))
+        }
+
+        // get file
+        let file = File::from_char(&chars[0]);
+        if file.is_err() {
+            return Err(String::from("Invalid square string"));
+        }
+        let file = file.unwrap();
+        
+        // get rank
+        let rank = chars[1].to_digit(10);
+        if rank.is_none() {
+            return Err(String::from("Invalid square string"));
+        }
+        let rank = Rank::from_index(rank.unwrap() as u8 - 1);
+        
+        // get square
+        Ok(Square::from_file_rank(file, rank))
     }
 
     /// Returns the file of the square.
@@ -109,6 +149,30 @@ mod tests {
         assert_eq!(30, Square::new(30).index);
         assert_eq!(54, Square::new(54).index);
         assert_eq!(63, Square::new(63).index);
+    }
+
+
+    #[test]
+    fn from_string_with_valid_string_returns_square() {
+        assert_eq!(A1, Square::from_string("a1").unwrap());
+        assert_eq!(A4, Square::from_string("a4").unwrap());
+        assert_eq!(H8, Square::from_string("h8").unwrap());
+        assert_eq!(E3, Square::from_string("e3").unwrap());
+        assert_eq!(G6, Square::from_string("g6").unwrap());
+        assert_eq!(H1, Square::from_string("h1").unwrap());
+        assert_eq!(F3, Square::from_string("f3").unwrap());
+        assert_eq!(B8, Square::from_string("b8").unwrap());
+    }
+    
+    #[test]
+    fn from_string_with_invalid_string_returns_error() {
+        assert_eq!(Err(String::from("Invalid square string")), Square::from_string("ab2"));
+        assert_eq!(Err(String::from("Invalid square string")), Square::from_string("123"));
+        assert_eq!(Err(String::from("Invalid square string")), Square::from_string("h9"));
+        assert_eq!(Err(String::from("Invalid square string")), Square::from_string("j1"));
+        assert_eq!(Err(String::from("Invalid square string")), Square::from_string("nonsense"));
+        assert_eq!(Err(String::from("Invalid square string")), Square::from_string("2e"));
+        assert_eq!(Err(String::from("Invalid square string")), Square::from_string("G9"));
     }
 
     #[test]
