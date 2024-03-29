@@ -34,6 +34,22 @@ impl File {
             _ => unreachable!(),
         }
     }
+    
+    /// Constructs a new file from a char.
+    pub fn from_char(char: &char) -> Result<File, String> {
+        let char = char.to_ascii_lowercase();
+        match char {
+            'a' => Ok(File::A),
+            'b' => Ok(File::B),
+            'c' => Ok(File::C),
+            'd' => Ok(File::D),
+            'e' => Ok(File::E),
+            'f' => Ok(File::F),
+            'g' => Ok(File::G),
+            'h' => Ok(File::H),
+            _other => Err(String::from("Invalid char string")),
+        }
+    }
 
     /// Returns the file to the right.
     pub fn right(&self) -> File {
@@ -89,6 +105,34 @@ mod tests {
         assert_eq!(File::A, File::from_index(8));
     }
 
+    #[test]
+    fn from_char_with_valid_char_returns_file() {
+        assert_eq!(Ok(File::A), File::from_char(&'a'));
+        assert_eq!(Ok(File::B), File::from_char(&'b'));
+        assert_eq!(Ok(File::C), File::from_char(&'c'));
+        assert_eq!(Ok(File::D), File::from_char(&'d'));
+        assert_eq!(Ok(File::E), File::from_char(&'e'));
+        assert_eq!(Ok(File::F), File::from_char(&'f'));
+        assert_eq!(Ok(File::G), File::from_char(&'g'));
+        assert_eq!(Ok(File::H), File::from_char(&'h'));
+
+        assert_eq!(Ok(File::A), File::from_char(&'A'));
+        assert_eq!(Ok(File::B), File::from_char(&'B'));
+        assert_eq!(Ok(File::C), File::from_char(&'C'));
+        assert_eq!(Ok(File::D), File::from_char(&'D'));
+        assert_eq!(Ok(File::E), File::from_char(&'E'));
+        assert_eq!(Ok(File::F), File::from_char(&'F'));
+        assert_eq!(Ok(File::G), File::from_char(&'G'));
+        assert_eq!(Ok(File::H), File::from_char(&'H'));
+    }
+    
+    #[test]
+    fn from_char_with_invalid_char_returns_error() {
+        assert_eq!(Err(String::from("Invalid char string")), File::from_char(&'1'));
+        assert_eq!(Err(String::from("Invalid char string")), File::from_char(&'k'));
+        assert_eq!(Err(String::from("Invalid char string")), File::from_char(&'-'));
+    }
+    
     #[test]
     fn right_returns_file_to_the_right() {
         assert_eq!(File::B, File::A.right());
