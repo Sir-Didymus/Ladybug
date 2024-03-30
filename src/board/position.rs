@@ -3,7 +3,6 @@ use crate::board::castling_rights::CastlingRights;
 use crate::board::castling_rights::CastlingRights::NoRights;
 use crate::board::color::{Color};
 use crate::board::color::Color::White;
-use crate::board::file::File;
 use crate::board::piece::Piece;
 use crate::board::square::Square;
 
@@ -19,8 +18,8 @@ pub struct Position {
     /// The castling rights for both White and Black.
     pub castling_rights: [CastlingRights; 2],
 
-    /// If en passant is possible, this Option contains the target file for the en passant move.
-    pub en_passant: Option<File>,
+    /// If en passant is possible, this Option contains the target square for the en passant move.
+    pub en_passant: Option<Square>,
 
     /// The color whose turn it is.
     pub color_to_move: Color,
