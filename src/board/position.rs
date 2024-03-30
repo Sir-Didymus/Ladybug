@@ -1,9 +1,9 @@
 use crate::board::bitboard::Bitboard;
 use crate::board::castling_rights::CastlingRights;
 use crate::board::castling_rights::CastlingRights::NoRights;
-use crate::board::color::{Color};
+use crate::board::color::{Color, NUM_COLORS};
 use crate::board::color::Color::White;
-use crate::board::piece::Piece;
+use crate::board::piece::{NUM_PIECES, Piece};
 use crate::board::square::Square;
 
 /// This struct uniquely encodes a chess position.
@@ -40,8 +40,25 @@ impl Default for Position {
 
 impl Position  {
     /// Sets a piece of the specified color on the specified square.
+    /// 
+    /// This method DOES NOT check if there already is another piece on that square,
+    /// so use `get_piece` to check if the square is unoccupied first.
     pub fn set_piece(&mut self, piece: Piece, color: Color, square: Square) {
         self.pieces[color.to_index() as usize][piece.to_index() as usize].set_bit(square);
+    }
+    
+    /// Returns the piece and the piece's color on the specified square.
+    /// Returns None if no piece occupies the square.
+    pub fn get_piece(&self, square: Square) -> Option<(Piece, Color)> {
+        for color_index in 0..NUM_COLORS {
+            for piece_index in 0..NUM_PIECES {
+                match self.pieces[color_index as usize][piece_index as usize].get_bit(square) {
+                    true => return Some((Piece::from_index(piece_index), Color::from_index(color_index))),
+                    false => {},
+                }
+            }
+        }
+        None
     }
 }
 
@@ -52,7 +69,7 @@ mod tests {
     use crate::board::color::Color::{Black, White};
     use crate::board::piece::Piece::{Bishop, King, Knight, Pawn, Queen, Rook};
     use crate::board::position::Position;
-    use crate::board::square::{E4, G3, H7};
+    use crate::board::square::{A1, A3, E1, E4, F2, F3, G3, H7, H8};
 
     #[test]
     fn default_returns_position_with_default_values() {
@@ -93,5 +110,23 @@ mod tests {
         assert_eq!(position_before.pieces[Black.to_index() as usize][Rook.to_index() as usize], position_after.pieces[Black.to_index() as usize][Rook.to_index() as usize]);
         assert_eq!(position_before.pieces[Black.to_index() as usize][Queen.to_index() as usize], position_after.pieces[Black.to_index() as usize][Queen.to_index() as usize]);
         assert_eq!(position_before.pieces[Black.to_index() as usize][King.to_index() as usize], position_after.pieces[Black.to_index() as usize][King.to_index() as usize]);
+    }
+    
+    #[test]
+    fn get_piece_returns_piece_on_specified_square() {
+        let mut position = Position::default();
+        position.set_piece(Knight, Black, E4);
+        position.set_piece(King, White, H8);
+        position.set_piece(Bishop, White, F2);
+        
+        assert_eq!(None, position.get_piece(A3));
+        assert_eq!(None, position.get_piece(F3));
+        assert_eq!(None, position.get_piece(A1));
+        assert_eq!(None, position.get_piece(E1));
+        assert_eq!(None, position.get_piece(H7));
+
+        assert_eq!(Some((Knight, Black)), position.get_piece(E4));
+        assert_eq!(Some((King, White)), position.get_piece(H8));
+        assert_eq!(Some((Bishop, White)), position.get_piece(F2));
     }
 }
