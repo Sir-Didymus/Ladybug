@@ -17,7 +17,7 @@ pub mod fen;
 /// The board struct holds the current position of the board.
 /// It also keeps track of the half-move (ply) history, the full move counter, the number of reversible half-moves (50 move rule),
 /// and a list of all positions that have been on the board before (threefold repetition).
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Board {
     /// The current position of the chess board.
     pub position: Position,

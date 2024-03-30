@@ -169,9 +169,96 @@ mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::castling_rights::CastlingRights;
     use crate::board::color::Color::{Black, White};
-    use crate::board::fen::{parse_castling_rights, parse_color_to_move, parse_en_passant, parse_fullmove_counter, parse_halfmove_clock, parse_pieces, split_fen};
+    use crate::board::fen::{parse_castling_rights, parse_color_to_move, parse_en_passant, parse_fen, parse_fullmove_counter, parse_halfmove_clock, parse_pieces, split_fen};
     use crate::board::piece::Piece::{Bishop, King, Knight, Pawn, Queen, Rook};
-    use crate::board::square;
+    use crate::board::{square};
+    use crate::board::square::{A5, A6};
+
+    #[test]
+    fn parse_fen_with_valid_fen_returns_board() {
+        // -----------------------------------------------------------------------------------------
+        // Test the parse_fen function with a lot of different positions to make sure it's working.
+        // -----------------------------------------------------------------------------------------
+
+        // -----------------------------------------------------------------------------------------
+        // position 1 (starting position)
+        // -----------------------------------------------------------------------------------------
+        
+        let board = parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+        // expected piece bitboards of the resulting position
+        let bitboards = [
+            [Bitboard::new(0xff00), Bitboard::new(0x42), Bitboard::new(0x24), Bitboard::new(0x81), Bitboard::new(0x8), Bitboard::new(0x10)],
+            [Bitboard::new(0xff000000000000), Bitboard::new(0x4200000000000000), Bitboard::new(0x2400000000000000), Bitboard::new(0x8100000000000000), Bitboard::new(0x800000000000000), Bitboard::new(0x1000000000000000)]
+        ];
+        assert_eq!(bitboards, board.position.pieces);
+        assert_eq!(White, board.position.color_to_move);
+        assert_eq!([CastlingRights::Both; 2], board.position.castling_rights);
+        assert_eq!(None, board.position.en_passant);
+        assert_eq!(0, board.halfmove_clock);
+        assert_eq!(1, board.fullmove_counter);
+
+        // -----------------------------------------------------------------------------------------
+        // position 2
+        // -----------------------------------------------------------------------------------------
+
+        let board = parse_fen("2r3k1/1p4pp/8/p2NPp2/3PnB2/b4Q2/Pqr3PP/R4RK1 b - - 2 23").unwrap();
+        // expected piece bitboards of the resulting position
+        let bitboards = [
+            [Bitboard::new(0x100800c100), Bitboard::new(0x800000000), Bitboard::new(0x20000000), Bitboard::new(0x21), Bitboard::new(0x200000), Bitboard::new(0x40)],
+            [Bitboard::new(0xc2002100000000), Bitboard::new(0x10000000), Bitboard::new(0x10000), Bitboard::new(0x400000000000400), Bitboard::new(0x200), Bitboard::new(0x4000000000000000)]
+        ];
+        assert_eq!(bitboards, board.position.pieces);
+        assert_eq!(Black, board.position.color_to_move);
+        assert_eq!([CastlingRights::NoRights; 2], board.position.castling_rights);
+        assert_eq!(None, board.position.en_passant);
+        assert_eq!(2, board.halfmove_clock);
+        assert_eq!(23, board.fullmove_counter);
+
+        // -----------------------------------------------------------------------------------------
+        // position 3
+        // -----------------------------------------------------------------------------------------
+
+        let board = parse_fen("r1q3kr/5pQ1/1p1p2p1/p2P2PN/2P5/P7/1P5P/5RK1 b - - 4 33").unwrap();
+        // expected piece bitboards of the resulting position
+        let bitboards = [
+            [Bitboard::new(0x4804018200), Bitboard::new(0x8000000000), Bitboard::new(0), Bitboard::new(0x20), Bitboard::new(0x40000000000000), Bitboard::new(0x40)],
+            [Bitboard::new(0x204a0100000000), Bitboard::new(0), Bitboard::new(0), Bitboard::new(0x8100000000000000), Bitboard::new(0x400000000000000), Bitboard::new(0x4000000000000000)]
+        ];
+        assert_eq!(bitboards, board.position.pieces);
+        assert_eq!(Black, board.position.color_to_move);
+        assert_eq!([CastlingRights::NoRights; 2], board.position.castling_rights);
+        assert_eq!(None, board.position.en_passant);
+        assert_eq!(4, board.halfmove_clock);
+        assert_eq!(33, board.fullmove_counter);
+
+        // -----------------------------------------------------------------------------------------
+        // position 4
+        // -----------------------------------------------------------------------------------------
+
+        let board = parse_fen("2k2b1r/2qr1ppp/1pN1pn2/pBPp1b2/Q2P4/P1N5/1P3PPP/R1B1K2R w KQ a6 0 13").unwrap();
+        // expected piece bitboards of the resulting position
+        let bitboards = [
+            [Bitboard::new(0x40801e200), Bitboard::new(0x40000040000), Bitboard::new(0x200000004), Bitboard::new(0x81), Bitboard::new(0x1000000), Bitboard::new(0x10)],
+            [Bitboard::new(0xe0120900000000), Bitboard::new(0x200000000000), Bitboard::new(0x2000002000000000), Bitboard::new(0x8008000000000000), Bitboard::new(0x4000000000000), Bitboard::new(0x400000000000000)]
+        ];
+        assert_eq!(bitboards, board.position.pieces);
+        assert_eq!(White, board.position.color_to_move);
+        assert_eq!([CastlingRights::Both, CastlingRights::NoRights], board.position.castling_rights);
+        assert_eq!(Some(A6), board.position.en_passant);
+        assert_eq!(0, board.halfmove_clock);
+        assert_eq!(13, board.fullmove_counter);
+    }
+
+    #[test]
+    fn parse_fen_with_invalid_fen_returns_error() {
+        assert_eq!(Err(String::from("Invalid FEN")), parse_fen(""));
+        assert_eq!(Err(String::from("Invalid FEN")), parse_fen("Rust is awesome!"));
+        assert_eq!(Err(String::from("Invalid FEN")), parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1"));
+        assert_eq!(Err(String::from("Invalid FEN")), parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQKQ - 0 1"));
+        assert_eq!(Err(String::from("Invalid FEN")), parse_fen("rnbqkbnr/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1"));
+        assert_eq!(Err(String::from("Invalid FEN")), parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR B KQkq - 0 1"));
+        assert_eq!(Err(String::from("Invalid FEN")), parse_fen("rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+    }
 
     #[test]
     fn split_fen_with_valid_fen_returns_vec_with_6_strings() {
