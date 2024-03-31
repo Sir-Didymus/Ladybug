@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 /// Represents a file on a chessboard.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum File {
@@ -61,6 +63,22 @@ impl File {
         match self {
             File::A => File::H, // Wrap around
             other=> File::from_index(other.to_index() - 1)
+        }
+    }
+}
+
+/// Prints the file as text.
+impl Display for File {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        match self {
+            File::A => write!(f, "a"),
+            File::B => write!(f, "b"),
+            File::C => write!(f, "c"),
+            File::D => write!(f, "d"),
+            File::E => write!(f, "e"),
+            File::F => write!(f, "f"),
+            File::G => write!(f, "g"),
+            File::H => write!(f, "h"),
         }
     }
 }
@@ -161,5 +179,17 @@ mod tests {
         for file_index in (1..NUM_FILES).rev() {
             assert_eq!(File::from_index(file_index - 1), File::from_index(file_index).left())
         }
+    }
+
+    #[test]
+    fn file_formats_correctly() {
+        assert_eq!("a", format!("{}", File::A));
+        assert_eq!("b", format!("{}", File::B));
+        assert_eq!("c", format!("{}", File::C));
+        assert_eq!("d", format!("{}", File::D));
+        assert_eq!("e", format!("{}", File::E));
+        assert_eq!("f", format!("{}", File::F));
+        assert_eq!("g", format!("{}", File::G));
+        assert_eq!("h", format!("{}", File::H));
     }
 }
