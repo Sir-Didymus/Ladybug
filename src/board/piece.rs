@@ -33,24 +33,26 @@ impl Piece {
         }
     }
     
-    /// Returns a unicode character based on piece type and color.
+    /// Returns a char based on piece type and color.
+    /// The chars are chosen like in the FEN notation, with capital letters for white pieces
+    /// and lower case letters for black pieces.
     pub fn to_char(&self, color: Color) -> char {
         match color {
             Color::White => match self {
-                Piece::Pawn => '\u{2659}',
-                Piece::Knight => '\u{2658}',
-                Piece::Bishop => '\u{2657}',
-                Piece::Rook => '\u{2656}',
-                Piece::Queen => '\u{2655}',
-                Piece::King => '\u{2654}',
+                Piece::Pawn => 'P',
+                Piece::Knight => 'N',
+                Piece::Bishop => 'B',
+                Piece::Rook => 'R',
+                Piece::Queen => 'Q',
+                Piece::King => 'K',
             }
             Color::Black => match self {
-                Piece::Pawn => '\u{265F}',
-                Piece::Knight => '\u{265E}',
-                Piece::Bishop => '\u{265D}',
-                Piece::Rook => '\u{265C}',
-                Piece::Queen => '\u{265B}',
-                Piece::King => '\u{265A}',
+                Piece::Pawn => 'p',
+                Piece::Knight => 'n',
+                Piece::Bishop => 'b',
+                Piece::Rook => 'r',
+                Piece::Queen => 'q',
+                Piece::King => 'k',
             }
         }
     }
@@ -94,19 +96,19 @@ mod tests {
     }
     
     #[test]
-    fn to_char_returns_correct_unicode_char() {
-        assert_eq!('\u{2659}', Pawn.to_char(White));
-        assert_eq!('\u{2658}', Knight.to_char(White));
-        assert_eq!('\u{2657}', Bishop.to_char(White));
-        assert_eq!('\u{2656}', Rook.to_char(White));
-        assert_eq!('\u{2655}', Queen.to_char(White));
-        assert_eq!('\u{2654}', King.to_char(White));
+    fn to_char_returns_correct_char() {
+        assert_eq!('P', Pawn.to_char(White));
+        assert_eq!('N', Knight.to_char(White));
+        assert_eq!('B', Bishop.to_char(White));
+        assert_eq!('R', Rook.to_char(White));
+        assert_eq!('Q', Queen.to_char(White));
+        assert_eq!('K', King.to_char(White));
 
-        assert_eq!('\u{265F}', Pawn.to_char(Black));
-        assert_eq!('\u{265E}', Knight.to_char(Black));
-        assert_eq!('\u{265D}', Bishop.to_char(Black));
-        assert_eq!('\u{265C}', Rook.to_char(Black));
-        assert_eq!('\u{265B}', Queen.to_char(Black));
-        assert_eq!('\u{265A}', King.to_char(Black));
+        assert_eq!('p', Pawn.to_char(Black));
+        assert_eq!('n', Knight.to_char(Black));
+        assert_eq!('b', Bishop.to_char(Black));
+        assert_eq!('r', Rook.to_char(Black));
+        assert_eq!('q', Queen.to_char(Black));
+        assert_eq!('k', King.to_char(Black));
     }
 }
