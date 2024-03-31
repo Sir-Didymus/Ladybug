@@ -171,8 +171,7 @@ mod tests {
     use crate::board::color::Color::{Black, White};
     use crate::board::fen::{parse_castling_rights, parse_color_to_move, parse_en_passant, parse_fen, parse_fullmove_counter, parse_halfmove_clock, parse_pieces, split_fen};
     use crate::board::piece::Piece::{Bishop, King, Knight, Pawn, Queen, Rook};
-    use crate::board::{square};
-    use crate::board::square::{A5, A6};
+    use crate::board::square;
 
     #[test]
     fn parse_fen_with_valid_fen_returns_board() {
@@ -244,7 +243,7 @@ mod tests {
         assert_eq!(bitboards, board.position.pieces);
         assert_eq!(White, board.position.color_to_move);
         assert_eq!([CastlingRights::Both, CastlingRights::NoRights], board.position.castling_rights);
-        assert_eq!(Some(A6), board.position.en_passant);
+        assert_eq!(Some(square::A6), board.position.en_passant);
         assert_eq!(0, board.halfmove_clock);
         assert_eq!(13, board.fullmove_counter);
     }

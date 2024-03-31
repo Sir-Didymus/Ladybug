@@ -38,7 +38,6 @@ impl Display for Color {
 
 #[cfg(test)]
 mod tests {
-    use std::fmt::{Display};
     use crate::board::color::Color;
 
     #[test]
