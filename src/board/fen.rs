@@ -93,6 +93,14 @@ fn parse_pieces(piece_fen: &str) -> Result<[[Bitboard; 6]; 2], String> {
                 }
                 _other => return Err(String::from("Invalid FEN")),
             }
+            if file_index > 7 {
+                // In a FEN string, pieces are specified using letters (P for a white pawn for example),
+                // while one or more empty squares are notated with a number (2 for two empty squares for example).
+                // If the file_index is larger than seven before the increment below,
+                // it means that the number of piece letters plus the sum of numbers used to notate empty squares was larger than 8.
+                // Since a chessboard only has 8 files, the FEN must be invalid.
+                return Err(String::from("Invalid FEN"));
+            }
             file_index += 1;
         }
     }
@@ -257,6 +265,7 @@ mod tests {
         assert_eq!(Err(String::from("Invalid FEN")), parse_fen("rnbqkbnr/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1"));
         assert_eq!(Err(String::from("Invalid FEN")), parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR B KQkq - 0 1"));
         assert_eq!(Err(String::from("Invalid FEN")), parse_fen("rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+        assert_eq!(Err(String::from("Invalid FEN")), parse_fen("rnbqkbnr/ppppp1ppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
     }
 
     #[test]
@@ -317,7 +326,7 @@ mod tests {
     fn parse_pieces_with_invalid_fen_returns_error() {
         assert_eq!(Err(String::from("Invalid FEN")), parse_pieces(&String::from("/rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R/")));
         assert_eq!(Err(String::from("Invalid FEN")), parse_pieces(&String::from("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP")));
-        assert_ne!(Err(String::from("Invalid FEN")), parse_pieces(&String::from("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R")));
+        assert_eq!(Err(String::from("Invalid FEN")), parse_pieces(&String::from("rnbqk1bnr/8/8/8/8/8/8/8")));
     }
 
     #[test]
