@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 /// The two colors in the game of chess.
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Color {
@@ -24,8 +26,19 @@ impl Color {
     }
 }
 
+/// Prints the color as text.
+impl Display for Color {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        match self {
+            Color::White => write!(f, "White"),
+            Color::Black => write!(f, "Black"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::fmt::{Display};
     use crate::board::color::Color;
 
     #[test]
@@ -44,5 +57,11 @@ mod tests {
     fn from_index_with_invalid_index_wraps_around() {
         assert_eq!(Color::White, Color::from_index(2));
         assert_eq!(Color::Black, Color::from_index(3));
+    }
+    
+    #[test]
+    fn color_formats_correctly() {
+        assert_eq!("White", format!("{}", Color::White));
+        assert_eq!("Black", format!("{}", Color::Black));
     }
 }
