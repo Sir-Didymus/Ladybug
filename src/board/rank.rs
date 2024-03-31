@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 /// Represents a rank on a chessboard.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Rank {
@@ -45,6 +47,22 @@ impl Rank {
         match self {
             Rank::First => Rank::Eighth, // Wrap around
             other => Rank::from_index(other.to_index() - 1)
+        }
+    }
+}
+
+/// Prints the rank as text.
+impl Display for Rank {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        match self {
+            Rank::First => write!(f, "1"),
+            Rank::Second => write!(f, "2"),
+            Rank::Third => write!(f, "3"),
+            Rank::Fourth => write!(f, "4"),
+            Rank::Fifth => write!(f, "5"),
+            Rank::Sixth => write!(f, "6"),
+            Rank::Seventh => write!(f, "7"),
+            Rank::Eighth => write!(f, "8"),
         }
     }
 }
@@ -116,5 +134,17 @@ mod tests {
         for rank_index in (1..NUM_RANKS).rev() {
             assert_eq!(Rank::from_index(rank_index - 1), Rank::from_index(rank_index).down())
         }
+    }
+
+    #[test]
+    fn rank_formats_correctly() {
+        assert_eq!("1", format!("{}", Rank::First));
+        assert_eq!("2", format!("{}", Rank::Second));
+        assert_eq!("3", format!("{}", Rank::Third));
+        assert_eq!("4", format!("{}", Rank::Fourth));
+        assert_eq!("5", format!("{}", Rank::Fifth));
+        assert_eq!("6", format!("{}", Rank::Sixth));
+        assert_eq!("7", format!("{}", Rank::Seventh));
+        assert_eq!("8", format!("{}", Rank::Eighth));
     }
 }
