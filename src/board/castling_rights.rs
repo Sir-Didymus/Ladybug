@@ -21,10 +21,15 @@ impl Display for CastlingRights {
     }
 }
 
-#[test]
-fn castling_rights_formats_correctly() {
-    assert_eq!("NoRights", format!("{}", CastlingRights::NoRights));
-    assert_eq!("KingSide", format!("{}", CastlingRights::KingSide));
-    assert_eq!("QueenSide", format!("{}", CastlingRights::QueenSide));
-    assert_eq!("Both", format!("{}", CastlingRights::Both));
+#[cfg(test)]
+mod tests {
+    use crate::board::castling_rights::CastlingRights;
+
+    #[test]
+    fn castling_rights_formats_correctly() {
+        assert_eq!("NoRights", format!("{}", CastlingRights::NoRights));
+        assert_eq!("KingSide", format!("{}", CastlingRights::KingSide));
+        assert_eq!("QueenSide", format!("{}", CastlingRights::QueenSide));
+        assert_eq!("Both", format!("{}", CastlingRights::Both));
+    }
 }
