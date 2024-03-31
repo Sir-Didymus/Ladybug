@@ -42,6 +42,18 @@ impl Bitboard {
             self.value ^= 1 << square.index;
         }
     }
+    
+    /// Returns a list of all the squares that are set to 1.
+    /// Implemented using a combination of `trailing_zeros()` and Brian Kernighan's algorithm.
+    pub fn get_active_bits(&self) -> Vec<Square> {
+        let mut active_bits: Vec<Square> = Vec::new();
+        let mut bb_value = self.value;
+        while bb_value > 0 {
+            active_bits.push(Square::new(bb_value.trailing_zeros() as u8));
+            bb_value &= bb_value - 1;
+        }
+        active_bits
+    }
 }
 
 /// Prints the bitboard with '.' marking empty squares and 'X' marking occupied squares.
@@ -68,6 +80,7 @@ impl Display for Bitboard {
 
 #[cfg(test)]
 mod tests {
+    use crate::board::square;
     use super::*;
 
     #[test]
@@ -149,6 +162,34 @@ mod tests {
             bitboard.pop_bit(Square::new(i));
             assert_eq!(0, (1 << i) & bitboard.value); // test that square is unset - I avoid using get_square here so the tests are independent of each other
         }
+    }
+    
+    #[test]
+    fn get_active_bits_returns_list_of_squares_with_set_bits() {
+        assert_eq!(0, Bitboard::new(0).get_active_bits().len());
+        
+        let active_bits = Bitboard::new(1).get_active_bits();
+        assert_eq!(1, active_bits.len());
+        assert_eq!(square::A1, active_bits[0]);
+        
+        let bitboard = Bitboard::new(0x8000022000000801);
+        let active_bits = bitboard.get_active_bits();
+        assert_eq!(5, active_bits.len());
+        assert_eq!(square::A1, active_bits[0]);
+        assert_eq!(square::D2, active_bits[1]);
+        assert_eq!(square::F5, active_bits[2]);
+        assert_eq!(square::B6, active_bits[3]);
+        assert_eq!(square::H8, active_bits[4]);
+
+        let bitboard = Bitboard::new(0x260000002000024);
+        let active_bits = bitboard.get_active_bits();
+        assert_eq!(6, active_bits.len());
+        assert_eq!(square::C1, active_bits[0]);
+        assert_eq!(square::F1, active_bits[1]);
+        assert_eq!(square::B4, active_bits[2]);
+        assert_eq!(square::F7, active_bits[3]);
+        assert_eq!(square::G7, active_bits[4]);
+        assert_eq!(square::B8, active_bits[5]);
     }
 
     #[test]
