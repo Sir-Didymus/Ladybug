@@ -63,6 +63,15 @@ impl Position  {
         }
         None
     }
+    
+    /// Returns the occupancy bitboard for the specified color.
+    pub fn get_occupancy(&self, color: Color) -> Bitboard {
+        let mut occupancy_bb = Bitboard::new(0);
+        for bitboard in self.pieces[color.to_index() as usize] {
+            occupancy_bb.value |= bitboard.value;
+        }
+        occupancy_bb
+    }
 }
 
 /// Prints the position with '.' marking empty squares, capital letters marking white pieces,
@@ -102,6 +111,7 @@ mod tests {
     use crate::board::castling_rights::CastlingRights::NoRights;
     use crate::board::color::Color::{Black, White};
     use crate::board::fen;
+    use crate::board::fen::parse_fen;
     use crate::board::piece::Piece::{Bishop, King, Knight, Pawn, Queen, Rook};
     use crate::board::position::Position;
     use crate::board::square::{A1, A3, E1, E4, F2, F3, G3, H7, H8};
@@ -163,6 +173,25 @@ mod tests {
         assert_eq!(Some((Knight, Black)), position.get_piece(E4));
         assert_eq!(Some((King, White)), position.get_piece(H8));
         assert_eq!(Some((Bishop, White)), position.get_piece(F2));
+    }
+    
+    #[test]
+    fn get_occupancy_returns_occupancy_bb() {
+        // position 1 (starting position)
+        let position = parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        assert_eq!(0xffff, position.get_occupancy(White).value);
+        assert_eq!(0xffff000000000000, position.get_occupancy(Black).value);
+        
+        // position 2
+        let position = parse_fen("2kr2r1/1pb1qp1p/2b1pp2/p1Q5/3P3B/P4N1P/2P1BPP1/3RRK2 b - - 0 22").unwrap().position;
+        assert_eq!(0x488a17438, position.get_occupancy(White).value);
+        assert_eq!(0x4cb6340100000000, position.get_occupancy(Black).value);
+
+        // position 3
+        let position = parse_fen("8/8/4k2p/7P/5p2/K7/r2r4/1q6 w - - 10 59").unwrap().position;
+        println!("{}", position);
+        assert_eq!(0x8000010000, position.get_occupancy(White).value);
+        assert_eq!(0x900020000902, position.get_occupancy(Black).value);
     }
     
     #[test]
