@@ -5,10 +5,12 @@ use crate::board::square::Square;
 pub struct Ply {
     /// The source square.
     pub source: Square,
-    /// The destination square.
-    pub destination: Square,
+    /// The target square.
+    pub target: Square,
     /// The type of the piece to move.
     pub piece: Piece,
     /// If the move is a capture move, this field will contain the type of the captured piece.
     pub captured_piece: Option<Piece>,
+    /// If the move is a pawn promotion, this field will contain the promotion piece.
+    pub promotion_piece: Option<Piece>,
 }
