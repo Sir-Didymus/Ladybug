@@ -71,6 +71,16 @@ impl Square {
     pub fn get_rank(&self) -> Rank {
         Rank::from_index(self.index / 8)
     }
+
+    /// Returns the square above.
+    pub fn up(&self) -> Square {
+        Square::from_file_rank(self.get_file(), self.get_rank().up())
+    }
+
+    /// Returns the square below.
+    pub fn down(&self) -> Square {
+        Square::from_file_rank(self.get_file(), self.get_rank().down())
+    }
 }
 
 /// Prints the square as text.
@@ -151,7 +161,7 @@ pub const H8: Square = Square { index: 63 };
 #[cfg(test)]
 mod tests {
     use crate::board::file::File;
-    use crate::board::rank::Rank;
+    use crate::board::rank::{Rank};
     use super::*;
 
     #[test]
@@ -184,6 +194,28 @@ mod tests {
         assert_eq!(Err(String::from("Invalid square string")), Square::from_string("nonsense"));
         assert_eq!(Err(String::from("Invalid square string")), Square::from_string("2e"));
         assert_eq!(Err(String::from("Invalid square string")), Square::from_string("G9"));
+    }
+
+    #[test]
+    fn up_returns_square_above() {
+        assert_eq!(A4, A3.up());
+        assert_eq!(H8, H7.up());
+        assert_eq!(E2, E1.up());
+        assert_eq!(G5, G4.up());
+        assert_eq!(F3, F2.up());
+        assert_eq!(B7, B6.up());
+        assert_eq!(D1, D8.up()); // wrap around
+    }
+
+    #[test]
+    fn down_returns_square_below() {
+        assert_eq!(A1, A2.down());
+        assert_eq!(H7, H8.down());
+        assert_eq!(E1, E2.down());
+        assert_eq!(G4, G5.down());
+        assert_eq!(F2, F3.down());
+        assert_eq!(B6, B7.down());
+        assert_eq!(D8, D1.down()); // wrap around
     }
 
     #[test]
