@@ -33,6 +33,14 @@ impl Color {
             Color::Black => Rank::First,
         }
     }
+    
+    /// Returns the rank of the pawn starting positions for the color.
+    pub fn pawn_rank(&self) -> Rank {
+        match self {
+            Color::White => Rank::Second,
+            Color::Black => Rank::Seventh,
+        }
+    }
 }
 
 /// Prints the color as text.
@@ -72,6 +80,12 @@ mod tests {
     fn promotion_rank_returns_correct_rank() {
         assert_eq!(Rank::Eighth, Color::White.promotion_rank());
         assert_eq!(Rank::First, Color::Black.promotion_rank());
+    }
+    
+    #[test]
+    fn pawn_rank_returns_correct_rank() {
+        assert_eq!(Rank::Second, Color::White.pawn_rank());
+        assert_eq!(Rank::Seventh, Color::Black.pawn_rank());
     }
     
     #[test]
