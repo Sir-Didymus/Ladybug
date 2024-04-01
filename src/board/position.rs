@@ -72,6 +72,17 @@ impl Position  {
         }
         occupancy_bb
     }
+
+    /// Returns the occupancies bitboard for the both colors.
+    pub fn get_occupancies(&self) -> Bitboard {
+        let mut occupancy_bb = Bitboard::new(0);
+        for color_index in 0..NUM_COLORS {
+            for bitboard in self.pieces[color_index as usize] {
+                occupancy_bb.value |= bitboard.value;
+            }
+        }
+        occupancy_bb
+    }
 }
 
 /// Prints the position with '.' marking empty squares, capital letters marking white pieces,
@@ -189,9 +200,23 @@ mod tests {
 
         // position 3
         let position = parse_fen("8/8/4k2p/7P/5p2/K7/r2r4/1q6 w - - 10 59").unwrap().position;
-        println!("{}", position);
         assert_eq!(0x8000010000, position.get_occupancy(White).value);
         assert_eq!(0x900020000902, position.get_occupancy(Black).value);
+    }
+
+    #[test]
+    fn get_occupancies_returns_occupancy_bb_for_both_colors() {
+        // position 1 (starting position)
+        let position = parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        assert_eq!(0xffff00000000ffff, position.get_occupancies().value);
+
+        // position 2
+        let position = parse_fen("2kr2r1/1pb1qp1p/2b1pp2/p1Q5/3P3B/P4N1P/2P1BPP1/3RRK2 b - - 0 22").unwrap().position;
+        assert_eq!(0x4cb6340588a17438, position.get_occupancies().value);
+
+        // position 3
+        let position = parse_fen("8/8/4k2p/7P/5p2/K7/r2r4/1q6 w - - 10 59").unwrap().position;
+        assert_eq!(0x908020010902, position.get_occupancies().value);
     }
     
     #[test]
