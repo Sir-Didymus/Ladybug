@@ -73,7 +73,7 @@ impl Position  {
         occupancy_bb
     }
 
-    /// Returns the occupancies bitboard for the both colors.
+    /// Returns the occupancies bitboard for both colors.
     pub fn get_occupancies(&self) -> Bitboard {
         let mut occupancy_bb = Bitboard::new(0);
         for color_index in 0..NUM_COLORS {
