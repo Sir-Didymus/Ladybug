@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use crate::board::rank::Rank;
 
 /// The two colors in the game of chess.
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -24,6 +25,14 @@ impl Color {
             _ => unreachable!(),
         }
     }
+    
+    /// Returns the promotion rank of the color.
+    pub fn promotion_rank(&self) -> Rank {
+        match self {
+            Color::White => Rank::Eighth,
+            Color::Black => Rank::First,
+        }
+    }
 }
 
 /// Prints the color as text.
@@ -39,6 +48,7 @@ impl Display for Color {
 #[cfg(test)]
 mod tests {
     use crate::board::color::Color;
+    use crate::board::rank::Rank;
 
     #[test]
     fn to_index_returns_correct_index() {
@@ -56,6 +66,12 @@ mod tests {
     fn from_index_with_invalid_index_wraps_around() {
         assert_eq!(Color::White, Color::from_index(2));
         assert_eq!(Color::Black, Color::from_index(3));
+    }
+    
+    #[test]
+    fn promotion_rank_returns_correct_rank() {
+        assert_eq!(Rank::Eighth, Color::White.promotion_rank());
+        assert_eq!(Rank::First, Color::Black.promotion_rank());
     }
     
     #[test]
