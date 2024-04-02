@@ -2,6 +2,10 @@ use crate::board::piece::Piece;
 use crate::board::square::Square;
 
 /// This struct represents a halfmove, also known as [ply](https://www.chessprogramming.org/Ply).
+/// 
+/// In the comments, I will often refer to a ply as a move, even though a move technically involves
+/// both White's and Black's responses. Unless stated otherwise, move and ply mean basically the same in this repository.
+/// Moves in the actual sense will be referred to as "fullmove".
 pub struct Ply {
     /// The source square.
     pub source: Square,
