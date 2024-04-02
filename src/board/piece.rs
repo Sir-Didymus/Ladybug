@@ -56,6 +56,16 @@ impl Piece {
             }
         }
     }
+    
+    /// Returns true if the piece is a slider piece, otherwise false.
+    pub fn is_slider(&self) -> bool {
+        match self {
+            Piece::Bishop => true,
+            Piece::Rook => true,
+            Piece::Queen => true,
+            _other => false,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -110,5 +120,16 @@ mod tests {
         assert_eq!('r', Rook.to_char(Black));
         assert_eq!('q', Queen.to_char(Black));
         assert_eq!('k', King.to_char(Black));
+    }
+    
+    #[test]
+    fn is_slider_returns_correct_bool() {
+        assert!(!Pawn.is_slider());
+        assert!(!Knight.is_slider());
+        assert!(!King.is_slider());
+        
+        assert!(Bishop.is_slider());
+        assert!(Rook.is_slider());
+        assert!(Queen.is_slider());
     }
 }
