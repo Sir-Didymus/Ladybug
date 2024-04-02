@@ -2,7 +2,7 @@
 
 use crate::board::bitboard::Bitboard;
 use crate::board::color::Color;
-use crate::board::piece::Piece;
+use crate::board::piece::{NUM_PIECES, Piece};
 use crate::board::position::Position;
 use crate::lookup::lookup_table::LookupTable;
 
@@ -18,11 +18,25 @@ struct MoveGenerator {
 impl MoveGenerator {
     /// Constructs a new move generator.
     fn new(lookup_table: LookupTable) -> Self {
-        MoveGenerator {lookup: lookup_table}
+        MoveGenerator { lookup: lookup_table }
     }
-    
-    /// Returns the attack bitboard for a given type of piece of the given color for the given position.
+
+    /// Returns the attack bitboard for all pieces of the given color combined.
     /// 
+    /// For example `get_attack_bb_combined(position, Color::White)` will return a bitboard with all squares
+    /// set that are attacked by any of White's pieces.
+    fn get_attack_bb_combined(&self, position: Position, color: Color) -> Bitboard {
+        // the result attack_bb
+        let mut attack_bb = Bitboard::new(0);
+        // `or` the attack bitboards for all pieces of the given color
+        for piece_index in 0..NUM_PIECES {
+            attack_bb.value |= self.get_attack_bb(position, Piece::from_index(piece_index), color).value;
+        }
+        attack_bb
+    }
+
+    /// Returns the attack bitboard for a given type of piece of the given color for the given position.
+    ///
     /// For example `get_attack_bb(position, Piece::Bishop, Color::White)` will return a bitboard with all squares
     /// set that are attacked by White's bishops.
     fn get_attack_bb(&self, position: Position, piece: Piece, color: Color) -> Bitboard {
@@ -46,7 +60,7 @@ impl MoveGenerator {
                 Piece::King => attack_bb.value |= self.lookup.get_king_attacks(square).value,
             };
         }
-        
+
         attack_bb
     }
 }
@@ -60,7 +74,7 @@ mod tests {
     use crate::move_gen::MoveGenerator;
 
     #[test]
-    fn test_get_attack_bb() {
+    fn test_get_combined_attack_bb() {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let generator = MoveGenerator::new(lookup);
@@ -68,7 +82,38 @@ mod tests {
         // -----------------------------------------------------------------------------------------
         // position 1 (starting position)
         // -----------------------------------------------------------------------------------------
-        
+
+        let position = parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let attack_bb = generator.get_attack_bb_combined(position, Color::White);
+        assert_eq!(0xffff7e, attack_bb.value);
+
+        // -----------------------------------------------------------------------------------------
+        // position 2
+        // -----------------------------------------------------------------------------------------
+
+        let position = parse_fen("r1bq1rk1/p5pp/3p1p2/1ppP2b1/2Pp1B2/1P1P1B2/P2Q1PPP/R3R1K1 b - - 3 17").unwrap().position;
+        let attack_bb = generator.get_attack_bb_combined(position, Color::White);
+        assert_eq!(0x10101cdb77feffff, attack_bb.value);
+
+        // -----------------------------------------------------------------------------------------
+        // position 3
+        // -----------------------------------------------------------------------------------------
+
+        let position = parse_fen("r3nrk1/2qn2pp/1p1bb3/1Q3p2/3P4/1N2P1N1/PP1BB1PP/R4RK1 w - - 2 21").unwrap().position;
+        let attack_bb = generator.get_attack_bb_combined(position, Color::Black);
+        assert_eq!(0xfeffef3d77470504, attack_bb.value);
+    }
+    
+    #[test]
+    fn test_get_attack_bb() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let generator = MoveGenerator::new(lookup);
+
+        // -----------------------------------------------------------------------------------------
+        // position 1 (starting position)
+        // -----------------------------------------------------------------------------------------
+
         let position = parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         let pawn_attack_bb = generator.get_attack_bb(position, Piece::Pawn, Color::Black);
         let knight_attack_bb = generator.get_attack_bb(position, Piece::Knight, Color::Black);
@@ -76,7 +121,7 @@ mod tests {
         let rook_attack_bb = generator.get_attack_bb(position, Piece::Rook, Color::Black);
         let queen_attack_bb = generator.get_attack_bb(position, Piece::Queen, Color::Black);
         let king_attack_bb = generator.get_attack_bb(position, Piece::King, Color::Black);
-        
+
         assert_eq!(0xff0000000000, pawn_attack_bb.value);
         assert_eq!(6936818859638784, knight_attack_bb.value);
         assert_eq!(0x5a000000000000, bishop_attack_bb.value);
@@ -114,7 +159,7 @@ mod tests {
         let rook_attack_bb = generator.get_attack_bb(position, Piece::Rook, Color::White);
         let queen_attack_bb = generator.get_attack_bb(position, Piece::Queen, Color::White);
         let king_attack_bb = generator.get_attack_bb(position, Piece::King, Color::White);
-        
+
         assert_eq!(0xa00e70000, pawn_attack_bb.value);
         assert_eq!(0x147288229c5000, knight_attack_bb.value);
         assert_eq!(0x2014001422, bishop_attack_bb.value);
