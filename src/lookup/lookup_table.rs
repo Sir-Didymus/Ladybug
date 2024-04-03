@@ -2,7 +2,6 @@ use crate::board::bitboard::Bitboard;
 use crate::board::color::Color;
 use crate::board::square::Square;
 use crate::lookup::{king_attacks, rook_attacks};
-use crate::lookup::bishop_attacks;
 
 /// This is the lookup table for the move generator.
 pub struct LookupTable {
@@ -43,7 +42,7 @@ impl LookupTable {
 
     /// Returns the attack bitboard for a bishop on the specified square and the specified blocker bitboard.
     pub fn get_bishop_attacks(&self, square: Square, blockers: Bitboard) -> Bitboard {
-        bishop_attacks::get_attack_bb(square, blockers)
+        Self::get_bishop_attack_bb(square, blockers)
     }
 
     /// Returns the attack bitboard for a rook on the specified square and the specified blocker bitboard.
