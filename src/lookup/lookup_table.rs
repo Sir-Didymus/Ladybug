@@ -2,7 +2,6 @@ use crate::board::bitboard::Bitboard;
 use crate::board::color::Color;
 use crate::board::square::Square;
 use crate::lookup::{king_attacks, knight_attacks, rook_attacks};
-use crate::lookup::pawn_attacks;
 use crate::lookup::bishop_attacks;
 
 /// This is the lookup table for the move generator.
@@ -27,7 +26,7 @@ impl Default for LookupTable {
 impl LookupTable {
     /// Initializes the lookup tables for all pieces.
     pub fn initialize_tables(&mut self) {
-        self.pawn_attacks = pawn_attacks::generate_pawn_attacks();
+        self.pawn_attacks = Self::generate_pawn_attacks();
         self.knight_attacks = knight_attacks::generate_knight_attacks();
         self.king_attacks = king_attacks::generate_king_attacks();
     }
