@@ -1,7 +1,6 @@
 use crate::board::bitboard::Bitboard;
 use crate::board::color::Color;
 use crate::board::square::Square;
-use crate::lookup::{king_attacks};
 
 /// This is the lookup table for the move generator.
 pub struct LookupTable {
@@ -27,7 +26,7 @@ impl LookupTable {
     pub fn initialize_tables(&mut self) {
         self.pawn_attacks = Self::generate_pawn_attacks();
         self.knight_attacks = Self::generate_knight_attacks();
-        self.king_attacks = king_attacks::generate_king_attacks();
+        self.king_attacks = Self::generate_king_attacks();
     }
 
     /// Returns the attack bitboard for a pawn of the specified color on the specified square.
