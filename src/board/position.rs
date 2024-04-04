@@ -121,8 +121,7 @@ mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::castling_rights::CastlingRights::NoRights;
     use crate::board::color::Color::{Black, White};
-    use crate::board::fen;
-    use crate::board::fen::parse_fen;
+    use crate::board::{Board};
     use crate::board::piece::Piece::{Bishop, King, Knight, Pawn, Queen, Rook};
     use crate::board::position::Position;
     use crate::board::square::{A1, A3, E1, E4, F2, F3, G3, H7, H8};
@@ -189,17 +188,17 @@ mod tests {
     #[test]
     fn get_occupancy_returns_occupancy_bb() {
         // position 1 (starting position)
-        let position = parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         assert_eq!(0xffff, position.get_occupancy(White).value);
         assert_eq!(0xffff000000000000, position.get_occupancy(Black).value);
         
         // position 2
-        let position = parse_fen("2kr2r1/1pb1qp1p/2b1pp2/p1Q5/3P3B/P4N1P/2P1BPP1/3RRK2 b - - 0 22").unwrap().position;
+        let position = Board::parse_fen("2kr2r1/1pb1qp1p/2b1pp2/p1Q5/3P3B/P4N1P/2P1BPP1/3RRK2 b - - 0 22").unwrap().position;
         assert_eq!(0x488a17438, position.get_occupancy(White).value);
         assert_eq!(0x4cb6340100000000, position.get_occupancy(Black).value);
 
         // position 3
-        let position = parse_fen("8/8/4k2p/7P/5p2/K7/r2r4/1q6 w - - 10 59").unwrap().position;
+        let position = Board::parse_fen("8/8/4k2p/7P/5p2/K7/r2r4/1q6 w - - 10 59").unwrap().position;
         assert_eq!(0x8000010000, position.get_occupancy(White).value);
         assert_eq!(0x900020000902, position.get_occupancy(Black).value);
     }
@@ -207,25 +206,25 @@ mod tests {
     #[test]
     fn get_occupancies_returns_occupancy_bb_for_both_colors() {
         // position 1 (starting position)
-        let position = parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         assert_eq!(0xffff00000000ffff, position.get_occupancies().value);
 
         // position 2
-        let position = parse_fen("2kr2r1/1pb1qp1p/2b1pp2/p1Q5/3P3B/P4N1P/2P1BPP1/3RRK2 b - - 0 22").unwrap().position;
+        let position = Board::parse_fen("2kr2r1/1pb1qp1p/2b1pp2/p1Q5/3P3B/P4N1P/2P1BPP1/3RRK2 b - - 0 22").unwrap().position;
         assert_eq!(0x4cb6340588a17438, position.get_occupancies().value);
 
         // position 3
-        let position = parse_fen("8/8/4k2p/7P/5p2/K7/r2r4/1q6 w - - 10 59").unwrap().position;
+        let position = Board::parse_fen("8/8/4k2p/7P/5p2/K7/r2r4/1q6 w - - 10 59").unwrap().position;
         assert_eq!(0x908020010902, position.get_occupancies().value);
     }
     
     #[test]
     fn position_formats_correctly() {
-        let position = fen::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         let expected_output = "8  r  n  b  q  k  b  n  r  \n7  p  p  p  p  p  p  p  p  \n6  .  .  .  .  .  .  .  .  \n5  .  .  .  .  .  .  .  .  \n4  .  .  .  .  .  .  .  .  \n3  .  .  .  .  .  .  .  .  \n2  P  P  P  P  P  P  P  P  \n1  R  N  B  Q  K  B  N  R  \n   a  b  c  d  e  f  g  h\n\nMove: White\nCastling: Both - Both\nEn Passant: None\n";
         assert_eq!(expected_output, format!("{}", position));
 
-        let position = fen::parse_fen("r1bq1rk1/1pp1bppp/p1n2n2/4p3/2PpP1P1/P2P1Q1P/1P1N1P2/R1B1KBNR b KQ g3 0 9").unwrap().position;
+        let position = Board::parse_fen("r1bq1rk1/1pp1bppp/p1n2n2/4p3/2PpP1P1/P2P1Q1P/1P1N1P2/R1B1KBNR b KQ g3 0 9").unwrap().position;
         let expected_output = "8  r  .  b  q  .  r  k  .  \n7  .  p  p  .  b  p  p  p  \n6  p  .  n  .  .  n  .  .  \n5  .  .  .  .  p  .  .  .  \n4  .  .  P  p  P  .  P  .  \n3  P  .  .  P  .  Q  .  P  \n2  .  P  .  N  .  P  .  .  \n1  R  .  B  .  K  B  N  R  \n   a  b  c  d  e  f  g  h\n\nMove: Black\nCastling: Both - NoRights\nEn Passant: g3\n";
         assert_eq!(expected_output, format!("{}", position));
     }
