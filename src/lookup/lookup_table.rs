@@ -3,6 +3,7 @@ use crate::board::color::Color;
 use crate::board::square::Square;
 
 /// This is the lookup table for the move generator.
+#[derive(Debug)]
 pub struct LookupTable {
     pawn_attacks: [[Bitboard; 64]; 2],
     knight_attacks: [Bitboard; 64],

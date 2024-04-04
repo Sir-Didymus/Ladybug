@@ -2,7 +2,9 @@
 //! The submodule `lookup_table` contains a struct to store these tables, while the generation logic
 //! is provided by functions in submodules such as `pawn_attacks` or `knight_attacks`.
 
+use std::sync::OnceLock;
 use crate::board::bitboard::Bitboard;
+use crate::lookup::lookup_table::LookupTable;
 
 pub mod lookup_table;
 pub mod pawn_attacks;
@@ -12,6 +14,13 @@ pub mod bishop_occupancies;
 pub mod rook_occupancies;
 pub mod bishop_attacks;
 pub mod rook_attacks;
+
+/// This static `OnceLock` variable will contain the `LookupTable` instance.
+/// Because calculating the lookup table is so expensive, it should only be done once.
+/// 
+/// The `OnceLock` type allows us to use its `set()` method to set the lookup table exactly once, and after that,
+/// the lookup table can be obtained by calling the `get()` method.
+pub static LOOKUP_TABLE: OnceLock<LookupTable> = OnceLock::new();
 
 // ---------------------------------------------------------------
 // Constants used to mask the attack bitboards for various pieces
