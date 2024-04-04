@@ -12,7 +12,7 @@ use crate::board::square::Square;
 impl Board {
     /// Parses a [FEN](https://www.chessprogramming.org/Forsyth-Edwards_Notation) string and returns a result.
     /// If the FEN could be parsed successfully, the result will contain a board. Otherwise, it will contain an error.
-    pub fn parse_fen(fen: &str) -> Result<Board, String> {
+    pub(super) fn parse_fen(fen: &str) -> Result<Board, String> {
         // split fen into its six parts
         let fen_parts = Self::split_fen(fen)?;
 

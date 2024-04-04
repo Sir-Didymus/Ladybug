@@ -83,7 +83,7 @@ mod tests {
         // position 1 (starting position)
         // -----------------------------------------------------------------------------------------
 
-        let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         let attack_bb = generator.get_attack_bb_combined(position, Color::White);
         assert_eq!(0xffff7e, attack_bb.value);
 
@@ -91,7 +91,7 @@ mod tests {
         // position 2
         // -----------------------------------------------------------------------------------------
 
-        let position = Board::parse_fen("r1bq1rk1/p5pp/3p1p2/1ppP2b1/2Pp1B2/1P1P1B2/P2Q1PPP/R3R1K1 b - - 3 17").unwrap().position;
+        let position = Board::from_fen("r1bq1rk1/p5pp/3p1p2/1ppP2b1/2Pp1B2/1P1P1B2/P2Q1PPP/R3R1K1 b - - 3 17").unwrap().position;
         let attack_bb = generator.get_attack_bb_combined(position, Color::White);
         assert_eq!(0x10101cdb77feffff, attack_bb.value);
 
@@ -99,7 +99,7 @@ mod tests {
         // position 3
         // -----------------------------------------------------------------------------------------
 
-        let position = Board::parse_fen("r3nrk1/2qn2pp/1p1bb3/1Q3p2/3P4/1N2P1N1/PP1BB1PP/R4RK1 w - - 2 21").unwrap().position;
+        let position = Board::from_fen("r3nrk1/2qn2pp/1p1bb3/1Q3p2/3P4/1N2P1N1/PP1BB1PP/R4RK1 w - - 2 21").unwrap().position;
         let attack_bb = generator.get_attack_bb_combined(position, Color::Black);
         assert_eq!(0xfeffef3d77470504, attack_bb.value);
     }
@@ -114,7 +114,7 @@ mod tests {
         // position 1 (starting position)
         // -----------------------------------------------------------------------------------------
 
-        let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         let pawn_attack_bb = generator.get_attack_bb(position, Piece::Pawn, Color::Black);
         let knight_attack_bb = generator.get_attack_bb(position, Piece::Knight, Color::Black);
         let bishop_attack_bb = generator.get_attack_bb(position, Piece::Bishop, Color::Black);
@@ -133,7 +133,7 @@ mod tests {
         // position 2
         // -----------------------------------------------------------------------------------------
 
-        let position = Board::parse_fen("6k1/2p2pp1/7p/N7/8/1Pn3P1/4r1qP/R6K w - - 0 29").unwrap().position;
+        let position = Board::from_fen("6k1/2p2pp1/7p/N7/8/1Pn3P1/4r1qP/R6K w - - 0 29").unwrap().position;
         let pawn_attack_bb = generator.get_attack_bb(position, Piece::Pawn, Color::White);
         let knight_attack_bb = generator.get_attack_bb(position, Piece::Knight, Color::White);
         let bishop_attack_bb = generator.get_attack_bb(position, Piece::Bishop, Color::White);
@@ -152,7 +152,7 @@ mod tests {
         // position 3
         // -----------------------------------------------------------------------------------------
 
-        let position = Board::parse_fen("r7/pb3k2/1p4p1/3N1p2/2P2Np1/3BR3/PP4PP/6K1 b - - 1 28").unwrap().position;
+        let position = Board::from_fen("r7/pb3k2/1p4p1/3N1p2/2P2Np1/3BR3/PP4PP/6K1 b - - 1 28").unwrap().position;
         let pawn_attack_bb = generator.get_attack_bb(position, Piece::Pawn, Color::White);
         let knight_attack_bb = generator.get_attack_bb(position, Piece::Knight, Color::White);
         let bishop_attack_bb = generator.get_attack_bb(position, Piece::Bishop, Color::White);
