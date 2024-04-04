@@ -1,20 +1,18 @@
 use crate::board::color::Color;
 use crate::board::piece::Piece;
 use crate::board::position::Position;
-use crate::move_gen::MoveGenerator;
 use crate::move_gen::ply::Ply;
 
-impl MoveGenerator {
     /// Generates all legal pawn moves for the given position.
-    pub fn generate_pawn_moves(&self, position: Position) -> Vec<Ply> {
+    pub fn generate_pawn_moves(position: Position) -> Vec<Ply> {
         let mut move_list: Vec<Ply> = Vec::new();
-        let mut quiet_pawn_moves = self.generate_quiet_pawn_moves(position);
+        let mut quiet_pawn_moves = generate_quiet_pawn_moves(position);
         move_list.append(&mut quiet_pawn_moves);
         move_list
     }
 
     /// Generates all legal quiet pawn moves for the given position.
-    fn generate_quiet_pawn_moves(&self, position: Position) -> Vec<Ply> {
+    fn generate_quiet_pawn_moves(position: Position) -> Vec<Ply> {
         let mut move_list: Vec<Ply> = Vec::new();
         
         // get occupancies
@@ -82,78 +80,18 @@ impl MoveGenerator {
         }
         move_list
     }
-}
 
 #[cfg(test)]
 mod tests {
     use crate::board::Board;
-    use crate::lookup::lookup_table::LookupTable;
-    use crate::move_gen::MoveGenerator;
+    use crate::move_gen::pawn_moves;
 
     #[test]
     fn test_generate_quiet_pawn_moves() {
-        let mut lookup = LookupTable::default();
-        lookup.initialize_tables();
-        let generator = MoveGenerator::new(lookup);
-        
         // position 1 (starting position)
         
         let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        let move_list = generator.generate_quiet_pawn_moves(position);
-        assert_eq!(16, move_list.len());
-
-        // position 2
-
-        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        let move_list = generator.generate_quiet_pawn_moves(position);
-        assert_eq!(16, move_list.len());
-
-        // position 3
-
-        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        let move_list = generator.generate_quiet_pawn_moves(position);
-        assert_eq!(16, move_list.len());
-
-        // position 4
-
-        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        let move_list = generator.generate_quiet_pawn_moves(position);
-        assert_eq!(16, move_list.len());
-
-        // position 5
-
-        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        let move_list = generator.generate_quiet_pawn_moves(position);
-        assert_eq!(16, move_list.len());
-
-        // position 6
-
-        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        let move_list = generator.generate_quiet_pawn_moves(position);
-        assert_eq!(16, move_list.len());
-
-        // position 7
-
-        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        let move_list = generator.generate_quiet_pawn_moves(position);
-        assert_eq!(16, move_list.len());
-
-        // position 8
-
-        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        let move_list = generator.generate_quiet_pawn_moves(position);
-        assert_eq!(16, move_list.len());
-
-        // position 9
-
-        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        let move_list = generator.generate_quiet_pawn_moves(position);
-        assert_eq!(16, move_list.len());
-
-        // position 10
-
-        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        let move_list = generator.generate_quiet_pawn_moves(position);
+        let move_list = pawn_moves::generate_quiet_pawn_moves(position);
         assert_eq!(16, move_list.len());
     }
 }
