@@ -58,6 +58,14 @@ impl Color {
         }
     }
     
+    /// Returns the double pawn push target rank
+    pub fn double_pawn_push_target_rank(&self) -> Rank {
+        match self {
+            Color::White => Rank::Fourth,
+            Color::Black => Rank::Fifth,
+        }
+    }
+    
     /// Returns the opponent's color.
     pub fn other(&self) -> Color {
         match self {
@@ -122,6 +130,12 @@ mod tests {
     fn en_passant_target_rank_returns_correct_rank() {
         assert_eq!(Rank::Sixth, Color::White.en_passant_target_rank());
         assert_eq!(Rank::Third, Color::Black.en_passant_target_rank());
+    }
+
+    #[test]
+    fn double_pawn_push_target_rank_returns_correct_rank() {
+        assert_eq!(Rank::Fourth, Color::White.double_pawn_push_target_rank());
+        assert_eq!(Rank::Fifth, Color::Black.double_pawn_push_target_rank());
     }
 
     #[test]
