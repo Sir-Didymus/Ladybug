@@ -14,7 +14,7 @@ use crate::lookup::LOOKUP_TABLE;
 /// It contains 12 bitboards, one for each piece for each color.
 /// It also contains information on whether en passant is possible, whose side it is to move,
 /// and the castling rights for each player.
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Position {
     /// Bitboards for all pieces for both White and Black.
     pub pieces: [[Bitboard; 6]; 2],
@@ -51,6 +51,16 @@ impl Default for Position {
             attack_bb_white: None,
             attack_bb_black: None,
         }
+    }
+}
+
+impl PartialEq for Position {
+    /// Implement PartialEq for Position.
+    /// This has to be done manually because only the fields necessary to uniquely encode a 
+    /// chess position should be compared. The attack bitboards are irrelevant.
+    fn eq(&self, other: &Self) -> bool {
+        self.pieces == other.pieces && self.castling_rights == other.castling_rights &&
+            self.en_passant == other.en_passant && self.color_to_move == other.color_to_move
     }
 }
 
