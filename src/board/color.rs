@@ -41,6 +41,14 @@ impl Color {
             Color::Black => Rank::Seventh,
         }
     }
+    
+    /// Returns the opponent's color.
+    pub fn other(&self) -> Color {
+        match self {
+            Color::White => Color::Black,
+            Color::Black => Color::White,
+        }
+    }
 }
 
 /// Prints the color as text.
@@ -86,6 +94,12 @@ mod tests {
     fn pawn_rank_returns_correct_rank() {
         assert_eq!(Rank::Second, Color::White.pawn_rank());
         assert_eq!(Rank::Seventh, Color::Black.pawn_rank());
+    }
+
+    #[test]
+    fn other_returns_opponent_color() {
+        assert_eq!(Color::Black, Color::White.other());
+        assert_eq!(Color::White, Color::Black.other());
     }
     
     #[test]
