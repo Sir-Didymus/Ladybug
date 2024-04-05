@@ -50,6 +50,14 @@ impl Color {
         }
     }
     
+    /// Returns the en passant target rank.
+    pub fn en_passant_target_rank(&self) -> Rank {
+        match self {
+            Color::White => Rank::Sixth,
+            Color::Black => Rank::Third,
+        }
+    }
+    
     /// Returns the opponent's color.
     pub fn other(&self) -> Color {
         match self {
@@ -108,6 +116,12 @@ mod tests {
     fn back_rank_returns_correct_rank() {
         assert_eq!(Rank::First, Color::White.back_rank());
         assert_eq!(Rank::Eighth, Color::Black.back_rank());
+    }
+
+    #[test]
+    fn en_passant_target_rank_returns_correct_rank() {
+        assert_eq!(Rank::Sixth, Color::White.en_passant_target_rank());
+        assert_eq!(Rank::Third, Color::Black.en_passant_target_rank());
     }
 
     #[test]
