@@ -17,7 +17,7 @@ use crate::lookup::LOOKUP_TABLE;
 pub struct Position {
     /// Bitboards for all pieces for both White and Black.
     pub pieces: [[Bitboard; 6]; 2],
-    
+
     /// The castling rights for both White and Black.
     pub castling_rights: [CastlingRights; 2],
 
@@ -26,14 +26,14 @@ pub struct Position {
 
     /// The color whose turn it is.
     pub color_to_move: Color,
-    
+
     //-------------------------------------------------------------------------------------------
     // fields not necessary to uniquely identify a chess position, but convenient
     //-------------------------------------------------------------------------------------------
-    
+
     /// The attack_bbs for White's and Black's pieces.
     attack_bb: [Option<Bitboard>; 2],
-    
+
 }
 
 impl Default for Position {
@@ -60,7 +60,7 @@ impl PartialEq for Position {
     }
 }
 
-impl Position  {
+impl Position {
     /// Constructs a new Position.
     pub fn new(pieces: [[Bitboard; 6]; 2], castling_rights: [CastlingRights; 2], en_passant: Option<Square>, color_to_move: Color) -> Self {
         Self {
@@ -71,15 +71,15 @@ impl Position  {
             attack_bb: [None; 2],
         }
     }
-    
+
     /// Sets a piece of the specified color on the specified square.
-    /// 
+    ///
     /// This method DOES NOT check if there already is another piece on that square,
     /// so use `get_piece` to check if the square is unoccupied first.
     pub fn set_piece(&mut self, piece: Piece, color: Color, square: Square) {
         self.pieces[color.to_index() as usize][piece.to_index() as usize].set_bit(square);
     }
-    
+
     /// Returns the piece and the piece's color on the specified square.
     /// Returns None if no piece occupies the square.
     pub fn get_piece(&self, square: Square) -> Option<(Piece, Color)> {
@@ -87,13 +87,13 @@ impl Position  {
             for piece_index in 0..NUM_PIECES {
                 match self.pieces[color_index as usize][piece_index as usize].get_bit(square) {
                     true => return Some((Piece::from_index(piece_index), Color::from_index(color_index))),
-                    false => {},
+                    false => {}
                 }
             }
         }
         None
     }
-    
+
     /// Returns the occupancy bitboard for the specified color.
     pub fn get_occupancy(&self, color: Color) -> Bitboard {
         let mut occupancy_bb = Bitboard::new(0);
@@ -163,6 +163,11 @@ impl Position  {
 
         attack_bb
     }
+
+    /// Returns whether the given square is attacked by a piece of the given color.
+    pub fn is_square_attacked(&mut self, square: Square, color: Color) -> bool {
+        self.get_attack_bb(color).get_bit(square)
+    }
 }
 
 /// Prints the position with '.' marking empty squares, capital letters marking white pieces,
@@ -187,7 +192,7 @@ impl Display for Position {
         }
         output += "   a  b  c  d  e  f  g  h\n";
         output += format!("\nMove: {}", self.color_to_move).as_str();
-        output += format!("\nCastling: {} - {}", self.castling_rights[0],  self.castling_rights[1]).as_str();
+        output += format!("\nCastling: {} - {}", self.castling_rights[0], self.castling_rights[1]).as_str();
         match self.en_passant {
             None => output += "\nEn Passant: None\n",
             Some(square) => output += format!("\nEn Passant: {square}\n").as_str(),
@@ -201,7 +206,7 @@ mod tests {
     use crate::board::bitboard::Bitboard;
     use crate::board::castling_rights::CastlingRights::NoRights;
     use crate::board::color::Color::{Black, White};
-    use crate::board::{Board};
+    use crate::board::{Board, square};
     use crate::board::color::Color;
     use crate::board::piece::Piece;
     use crate::board::piece::Piece::{Bishop, King, Knight, Pawn, Queen, Rook};
@@ -218,37 +223,37 @@ mod tests {
         assert_eq!(None, position.en_passant);
         assert_eq!(White, position.color_to_move);
     }
-    
+
     #[test]
     fn test_partial_eq() {
         let position1 = Position::default();
         let position2 = Position::default();
         assert_eq!(position1, position2);
     }
-    
+
     #[test]
     pub fn set_piece_sets_piece_on_correct_square_and_correct_bitboard() {
         let mut position = Position::default();
-        
+
         position.set_piece(Knight, White, E4);
         assert!(position.pieces[White.to_index() as usize][Knight.to_index() as usize].get_bit(E4));
         assert!(!position.pieces[White.to_index() as usize][Knight.to_index() as usize].get_bit(H7));
-        
+
         position.set_piece(Knight, White, H7);
         assert!(position.pieces[White.to_index() as usize][Knight.to_index() as usize].get_bit(H7));
         assert!(!position.pieces[Black.to_index() as usize][Knight.to_index() as usize].get_bit(H7));
         assert!(!position.pieces[White.to_index() as usize][Queen.to_index() as usize].get_bit(H7));
-        
+
         position.set_piece(Knight, Black, H7);
         assert!(position.pieces[Black.to_index() as usize][Knight.to_index() as usize].get_bit(H7));
-        
+
         let position_before = Position::default();
         let mut position_after = position_before;
         position_after.set_piece(Bishop, Black, G3);
 
         // test that black's knight bitboard changed
         assert_ne!(position_before.pieces[Black.to_index() as usize][Bishop.to_index() as usize], position_after.pieces[Black.to_index() as usize][Bishop.to_index() as usize]);
-        
+
         // test that other bitboards are still the same
         assert_eq!(position_before.pieces[White.to_index() as usize], position_after.pieces[White.to_index() as usize]);
         assert_eq!(position_before.pieces[Black.to_index() as usize][Pawn.to_index() as usize], position_after.pieces[Black.to_index() as usize][Pawn.to_index() as usize]);
@@ -257,14 +262,14 @@ mod tests {
         assert_eq!(position_before.pieces[Black.to_index() as usize][Queen.to_index() as usize], position_after.pieces[Black.to_index() as usize][Queen.to_index() as usize]);
         assert_eq!(position_before.pieces[Black.to_index() as usize][King.to_index() as usize], position_after.pieces[Black.to_index() as usize][King.to_index() as usize]);
     }
-    
+
     #[test]
     fn get_piece_returns_piece_on_specified_square() {
         let mut position = Position::default();
         position.set_piece(Knight, Black, E4);
         position.set_piece(King, White, H8);
         position.set_piece(Bishop, White, F2);
-        
+
         assert_eq!(None, position.get_piece(A3));
         assert_eq!(None, position.get_piece(F3));
         assert_eq!(None, position.get_piece(A1));
@@ -275,14 +280,14 @@ mod tests {
         assert_eq!(Some((King, White)), position.get_piece(H8));
         assert_eq!(Some((Bishop, White)), position.get_piece(F2));
     }
-    
+
     #[test]
     fn get_occupancy_returns_occupancy_bb() {
         // position 1 (starting position)
         let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         assert_eq!(0xffff, position.get_occupancy(White).value);
         assert_eq!(0xffff000000000000, position.get_occupancy(Black).value);
-        
+
         // position 2
         let position = Board::parse_fen("2kr2r1/1pb1qp1p/2b1pp2/p1Q5/3P3B/P4N1P/2P1BPP1/3RRK2 b - - 0 22").unwrap().position;
         assert_eq!(0x488a17438, position.get_occupancy(White).value);
@@ -308,7 +313,7 @@ mod tests {
         let position = Board::parse_fen("8/8/4k2p/7P/5p2/K7/r2r4/1q6 w - - 10 59").unwrap().position;
         assert_eq!(0x908020010902, position.get_occupancies().value);
     }
-    
+
     #[test]
     fn position_formats_correctly() {
         let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
@@ -413,5 +418,26 @@ mod tests {
         assert_eq!(0x1010101010e81010, rook_attack_bb.value);
         assert_eq!(0, queen_attack_bb.value);
         assert_eq!(0xe0a0, king_attack_bb.value);
+    }
+
+    #[test]
+    fn test_is_square_attacked() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        let mut position = Board::from_fen("5rk1/pppr1pp1/7p/3q4/3P4/P3R1PP/1P2Q1PK/8 w - - 5 33").unwrap().position;
+
+        assert!(position.is_square_attacked(square::B3, White));
+        assert!(position.is_square_attacked(square::B3, Black));
+
+        assert!(position.is_square_attacked(square::E1, White));
+        assert!(!position.is_square_attacked(square::E1, Black));
+
+        assert!(!position.is_square_attacked(square::H6, White));
+        assert!(position.is_square_attacked(square::H6, Black));
+
+        assert!(!position.is_square_attacked(square::A4, White));
+        assert!(!position.is_square_attacked(square::A4, Black));
     }
 }
