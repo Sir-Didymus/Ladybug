@@ -158,8 +158,14 @@ impl Position {
     }
 
     /// Returns whether the given square is attacked by a piece of the given color.
-    pub fn is_square_attacked(self, square: Square, color: Color) -> bool {
+    pub fn is_square_attacked(&self, square: Square, color: Color) -> bool {
         self.get_attack_bb(color).get_bit(square)
+    }
+    
+    /// Returns whether the king of the given color is in check
+    pub fn is_in_check(&self, color: Color) -> bool {
+        let king_square = self.pieces[color.to_index() as usize][Piece::King.to_index() as usize].get_active_bits()[0];
+        self.is_square_attacked(king_square, color.other())
     }
 
     /// Initializes the attack bitboards for both colors.
@@ -467,5 +473,42 @@ mod tests {
 
         assert!(!position.is_square_attacked(square::A4, White));
         assert!(!position.is_square_attacked(square::A4, Black));
+    }
+
+    #[test]
+    fn test_is_in_check() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1
+        let position = Board::from_fen("5rk1/pppr1pp1/7p/3q4/3P4/P3R1PP/1P2Q1PK/8 w - - 5 33").unwrap().position;
+        assert!(!position.is_in_check(Color::White));
+        assert!(!position.is_in_check(Color::Black));
+
+        // position 2
+        let position = Board::from_fen("8/8/7Q/8/6p1/5pBk/R4K2/8 b - - 0 67").unwrap().position;
+        assert!(!position.is_in_check(Color::White));
+        assert!(position.is_in_check(Color::Black));
+
+        // position 3
+        let position = Board::from_fen("rn2k2r/2pq1ppp/p2b4/1p4B1/2bP4/5N2/PP3PPP/R2QR1K1 b kq - 1 14").unwrap().position;
+        assert!(!position.is_in_check(Color::White));
+        assert!(position.is_in_check(Color::Black));
+
+        // position 4
+        let position = Board::from_fen("8/p1p5/2p2k2/8/2KPB1r1/8/8/8 w - - 4 37").unwrap().position;
+        assert!(!position.is_in_check(Color::White));
+        assert!(!position.is_in_check(Color::Black));
+
+        // position 5
+        let position = Board::from_fen("3k4/p1p5/2B5/1K1P3r/8/8/8/8 w - - 3 41").unwrap().position;
+        assert!(!position.is_in_check(Color::White));
+        assert!(!position.is_in_check(Color::Black));
+
+        // position 6
+        let position = Board::from_fen("8/ppp3kp/2b5/5P2/3P2N1/P2B4/1r3K2/8 w - - 0 28").unwrap().position;
+        assert!(position.is_in_check(Color::White));
+        assert!(!position.is_in_check(Color::Black));
     }
 }
