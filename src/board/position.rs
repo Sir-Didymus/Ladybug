@@ -32,7 +32,7 @@ pub struct Position {
     //-------------------------------------------------------------------------------------------
 
     /// The attack_bbs for White's and Black's pieces.
-    attack_bb: [Option<Bitboard>; 2],
+    attack_bb: [Bitboard; 2],
 
 }
 
@@ -40,13 +40,15 @@ impl Default for Position {
     /// Default constructor for Position.
     /// Returns a position with all bitboards having the value 0, meaning no pieces are on the board.
     fn default() -> Self {
-        Self {
+        let mut position = Self {
             pieces: [[Bitboard::new(0); 6]; 2],
             castling_rights: [NoRights; 2],
             en_passant: None,
             color_to_move: Color::White,
-            attack_bb: [None; 2],
-        }
+            attack_bb: [Bitboard::new(0); 2],
+        };
+        position.initialize_attack_bb();
+        position
     }
 }
 
@@ -63,13 +65,15 @@ impl PartialEq for Position {
 impl Position {
     /// Constructs a new Position.
     pub fn new(pieces: [[Bitboard; 6]; 2], castling_rights: [CastlingRights; 2], en_passant: Option<Square>, color_to_move: Color) -> Self {
-        Self {
+        let mut position = Self {
             pieces,
             castling_rights,
             en_passant,
             color_to_move,
-            attack_bb: [None; 2],
-        }
+            attack_bb: [Bitboard::new(0); 2],
+        };
+        position.initialize_attack_bb();
+        position
     }
 
     /// Sets a piece of the specified color on the specified square.
@@ -118,19 +122,8 @@ impl Position {
     ///
     /// For example `get_attack_bb(Color::White)` will return a bitboard with all squares
     /// set that are attacked by any of White's pieces.
-    pub fn get_attack_bb(&mut self, color: Color) -> Bitboard {
-        // if the attack_bb for the given color has not been calculated before, calculate it
-        if self.attack_bb[color.to_index() as usize].is_none() {
-            // the result attack_bb
-            let mut attack_bb = Bitboard::new(0);
-            // `or` the attack bitboards for all pieces of the given color
-            for piece_index in 0..NUM_PIECES {
-                attack_bb.value |= self.get_piece_attack_bb(Piece::from_index(piece_index), color).value;
-            }
-            // set the attack_bb field of the position to the newly calculated attack_bb
-            self.attack_bb[color.to_index() as usize] = Some(attack_bb);
-        }
-        self.attack_bb[color.to_index() as usize].unwrap()
+    pub fn get_attack_bb(&self, color: Color) -> Bitboard {
+        self.attack_bb[color.to_index() as usize]
     }
 
     /// Returns the attack bitboard for the given type of piece of the given color.
@@ -165,8 +158,23 @@ impl Position {
     }
 
     /// Returns whether the given square is attacked by a piece of the given color.
-    pub fn is_square_attacked(&mut self, square: Square, color: Color) -> bool {
+    pub fn is_square_attacked(self, square: Square, color: Color) -> bool {
         self.get_attack_bb(color).get_bit(square)
+    }
+
+    /// Initializes the attack bitboards for both colors.
+    pub fn initialize_attack_bb(&mut self) {
+        // calculate attack_bb for both colors
+        for color_index in 0..NUM_COLORS {
+            // the result attack_bb for the color
+            let mut attack_bb = Bitboard::new(0);
+            // `or` the attack bitboards for all pieces of the given color
+            for piece_index in 0..NUM_PIECES {
+                attack_bb.value |= self.get_piece_attack_bb(Piece::from_index(piece_index), Color::from_index(color_index)).value;
+            }
+            // add the calculated bb to the result array
+            self.attack_bb[color_index as usize] = attack_bb;
+        }
     }
 }
 
@@ -217,6 +225,10 @@ mod tests {
 
     #[test]
     fn default_returns_position_with_default_values() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
         let position = Position::default();
         assert_eq!([[Bitboard::new(0); 6]; 2], position.pieces);
         assert_eq!([NoRights; 2], position.castling_rights);
@@ -265,6 +277,10 @@ mod tests {
 
     #[test]
     fn get_piece_returns_piece_on_specified_square() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
         let mut position = Position::default();
         position.set_piece(Knight, Black, E4);
         position.set_piece(King, White, H8);
@@ -283,6 +299,10 @@ mod tests {
 
     #[test]
     fn get_occupancy_returns_occupancy_bb() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
         // position 1 (starting position)
         let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         assert_eq!(0xffff, position.get_occupancy(White).value);
@@ -301,6 +321,10 @@ mod tests {
 
     #[test]
     fn get_occupancies_returns_occupancy_bb_for_both_colors() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
         // position 1 (starting position)
         let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         assert_eq!(0xffff00000000ffff, position.get_occupancies().value);
@@ -316,6 +340,10 @@ mod tests {
 
     #[test]
     fn position_formats_correctly() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
         let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         let expected_output = "8  r  n  b  q  k  b  n  r  \n7  p  p  p  p  p  p  p  p  \n6  .  .  .  .  .  .  .  .  \n5  .  .  .  .  .  .  .  .  \n4  .  .  .  .  .  .  .  .  \n3  .  .  .  .  .  .  .  .  \n2  P  P  P  P  P  P  P  P  \n1  R  N  B  Q  K  B  N  R  \n   a  b  c  d  e  f  g  h\n\nMove: White\nCastling: Both - Both\nEn Passant: None\n";
         assert_eq!(expected_output, format!("{}", position));
@@ -335,7 +363,7 @@ mod tests {
         // position 1 (starting position)
         // -----------------------------------------------------------------------------------------
 
-        let mut position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         let attack_bb = position.get_attack_bb(White);
         assert_eq!(0xffff7e, attack_bb.value);
 
@@ -343,7 +371,7 @@ mod tests {
         // position 2
         // -----------------------------------------------------------------------------------------
 
-        let mut position = Board::from_fen("r1bq1rk1/p5pp/3p1p2/1ppP2b1/2Pp1B2/1P1P1B2/P2Q1PPP/R3R1K1 b - - 3 17").unwrap().position;
+        let position = Board::from_fen("r1bq1rk1/p5pp/3p1p2/1ppP2b1/2Pp1B2/1P1P1B2/P2Q1PPP/R3R1K1 b - - 3 17").unwrap().position;
         let attack_bb = position.get_attack_bb(White);
         assert_eq!(0x10101cdb77feffff, attack_bb.value);
 
@@ -351,7 +379,7 @@ mod tests {
         // position 3
         // -----------------------------------------------------------------------------------------
 
-        let mut position = Board::from_fen("r3nrk1/2qn2pp/1p1bb3/1Q3p2/3P4/1N2P1N1/PP1BB1PP/R4RK1 w - - 2 21").unwrap().position;
+        let position = Board::from_fen("r3nrk1/2qn2pp/1p1bb3/1Q3p2/3P4/1N2P1N1/PP1BB1PP/R4RK1 w - - 2 21").unwrap().position;
         let attack_bb = position.get_attack_bb(Black);
         assert_eq!(0xfeffef3d77470504, attack_bb.value);
     }
@@ -426,7 +454,7 @@ mod tests {
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
 
-        let mut position = Board::from_fen("5rk1/pppr1pp1/7p/3q4/3P4/P3R1PP/1P2Q1PK/8 w - - 5 33").unwrap().position;
+        let position = Board::from_fen("5rk1/pppr1pp1/7p/3q4/3P4/P3R1PP/1P2Q1PK/8 w - - 5 33").unwrap().position;
 
         assert!(position.is_square_attacked(square::B3, White));
         assert!(position.is_square_attacked(square::B3, Black));

@@ -181,9 +181,15 @@ mod tests {
     use crate::board::color::Color::{Black, White};
     use crate::board::piece::Piece::{Bishop, King, Knight, Pawn, Queen, Rook};
     use crate::board::{Board, square};
+    use crate::lookup::LOOKUP_TABLE;
+    use crate::lookup::lookup_table::LookupTable;
 
     #[test]
     fn parse_fen_with_valid_fen_returns_board() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
         // -----------------------------------------------------------------------------------------
         // Test the parse_fen function with a lot of different positions to make sure it's working.
         // -----------------------------------------------------------------------------------------
