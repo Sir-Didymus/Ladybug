@@ -27,6 +27,16 @@ pub struct Position {
 
     /// The color whose turn it is.
     pub color_to_move: Color,
+    
+    //-------------------------------------------------------------------------------------------
+    // fields not necessary to uniquely identify a chess position, but convenient
+    //-------------------------------------------------------------------------------------------
+    
+    /// The attack_bb for White's pieces
+    attack_bb_white: Option<Bitboard>,
+
+    /// The attack_bb for Black's pieces
+    attack_bb_black: Option<Bitboard>,
 }
 
 impl Default for Position {
@@ -38,11 +48,25 @@ impl Default for Position {
             castling_rights: [NoRights; 2],
             en_passant: None,
             color_to_move: White,
+            attack_bb_white: None,
+            attack_bb_black: None,
         }
     }
 }
 
 impl Position  {
+    /// Constructs a new Position.
+    pub fn new(pieces: [[Bitboard; 6]; 2], castling_rights: [CastlingRights; 2], en_passant: Option<Square>, color_to_move: Color) -> Self {
+        Self {
+            pieces,
+            castling_rights,
+            en_passant,
+            color_to_move,
+            attack_bb_white: None,
+            attack_bb_black: None,
+        }
+    }
+    
     /// Sets a piece of the specified color on the specified square.
     /// 
     /// This method DOES NOT check if there already is another piece on that square,

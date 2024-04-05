@@ -17,30 +17,30 @@ impl Board {
         let fen_parts = Self::split_fen(fen)?;
 
         // parse pieces
-        let pieces =  Self::parse_pieces(fen_parts.first().unwrap())?;
+        let pieces = Self::parse_pieces(fen_parts.first().unwrap())?;
 
         // parse color to move
-        let color_to_move =  Self::parse_color_to_move(fen_parts.get(1).unwrap())?;
+        let color_to_move = Self::parse_color_to_move(fen_parts.get(1).unwrap())?;
 
         // parse castling rights
-        let castling_rights =  Self::parse_castling_rights(fen_parts.get(2).unwrap())?;
+        let castling_rights = Self::parse_castling_rights(fen_parts.get(2).unwrap())?;
 
         // parse en passant
-        let en_passant =  Self::parse_en_passant(fen_parts.get(3).unwrap())?;
+        let en_passant = Self::parse_en_passant(fen_parts.get(3).unwrap())?;
 
         // parse halfmove clock
-        let halfmove_clock =  Self::parse_halfmove_clock(fen_parts.get(4).unwrap())?;
+        let halfmove_clock = Self::parse_halfmove_clock(fen_parts.get(4).unwrap())?;
 
         // parse fullmove counter
-        let fullmove_counter =  Self::parse_fullmove_counter(fen_parts.last().unwrap())?;
+        let fullmove_counter = Self::parse_fullmove_counter(fen_parts.last().unwrap())?;
 
         // create the position
-        let position = Position {
+        let position = Position::new(
             pieces,
             castling_rights,
             en_passant,
             color_to_move,
-        };
+        );
 
         // create the board
         let board = Board {
@@ -173,7 +173,7 @@ impl Board {
         }
     }
 }
-    
+
 #[cfg(test)]
 mod tests {
     use crate::board::bitboard::Bitboard;
@@ -191,8 +191,8 @@ mod tests {
         // -----------------------------------------------------------------------------------------
         // position 1 (starting position)
         // -----------------------------------------------------------------------------------------
-        
-        let board =  Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+
+        let board = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
         // expected piece bitboards of the resulting position
         let bitboards = [
             [Bitboard::new(0xff00), Bitboard::new(0x42), Bitboard::new(0x24), Bitboard::new(0x81), Bitboard::new(0x8), Bitboard::new(0x10)],
