@@ -118,14 +118,19 @@ impl Position  {
     ///
     /// For example `get_attack_bb(Color::White)` will return a bitboard with all squares
     /// set that are attacked by any of White's pieces.
-    pub fn get_attack_bb(&self, color: Color) -> Bitboard {
-        // the result attack_bb
-        let mut attack_bb = Bitboard::new(0);
-        // `or` the attack bitboards for all pieces of the given color
-        for piece_index in 0..NUM_PIECES {
-            attack_bb.value |= self.get_piece_attack_bb(Piece::from_index(piece_index), color).value;
+    pub fn get_attack_bb(&mut self, color: Color) -> Bitboard {
+        // if the attack_bb for the given color has not been calculated before, calculate it
+        if self.attack_bb[color.to_index() as usize].is_none() {
+            // the result attack_bb
+            let mut attack_bb = Bitboard::new(0);
+            // `or` the attack bitboards for all pieces of the given color
+            for piece_index in 0..NUM_PIECES {
+                attack_bb.value |= self.get_piece_attack_bb(Piece::from_index(piece_index), color).value;
+            }
+            // set the attack_bb field of the position to the newly calculated attack_bb
+            self.attack_bb[color.to_index() as usize] = Some(attack_bb);
         }
-        attack_bb
+        self.attack_bb[color.to_index() as usize].unwrap()
     }
 
     /// Returns the attack bitboard for the given type of piece of the given color.
@@ -325,7 +330,7 @@ mod tests {
         // position 1 (starting position)
         // -----------------------------------------------------------------------------------------
 
-        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let mut position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         let attack_bb = position.get_attack_bb(White);
         assert_eq!(0xffff7e, attack_bb.value);
 
@@ -333,7 +338,7 @@ mod tests {
         // position 2
         // -----------------------------------------------------------------------------------------
 
-        let position = Board::from_fen("r1bq1rk1/p5pp/3p1p2/1ppP2b1/2Pp1B2/1P1P1B2/P2Q1PPP/R3R1K1 b - - 3 17").unwrap().position;
+        let mut position = Board::from_fen("r1bq1rk1/p5pp/3p1p2/1ppP2b1/2Pp1B2/1P1P1B2/P2Q1PPP/R3R1K1 b - - 3 17").unwrap().position;
         let attack_bb = position.get_attack_bb(White);
         assert_eq!(0x10101cdb77feffff, attack_bb.value);
 
@@ -341,7 +346,7 @@ mod tests {
         // position 3
         // -----------------------------------------------------------------------------------------
 
-        let position = Board::from_fen("r3nrk1/2qn2pp/1p1bb3/1Q3p2/3P4/1N2P1N1/PP1BB1PP/R4RK1 w - - 2 21").unwrap().position;
+        let mut position = Board::from_fen("r3nrk1/2qn2pp/1p1bb3/1Q3p2/3P4/1N2P1N1/PP1BB1PP/R4RK1 w - - 2 21").unwrap().position;
         let attack_bb = position.get_attack_bb(Black);
         assert_eq!(0xfeffef3d77470504, attack_bb.value);
     }
