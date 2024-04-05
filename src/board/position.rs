@@ -3,8 +3,10 @@ use crate::board::bitboard::Bitboard;
 use crate::board::castling_rights::CastlingRights;
 use crate::board::castling_rights::CastlingRights::NoRights;
 use crate::board::color::{Color, NUM_COLORS};
+use crate::board::color::Color::{Black, White};
 use crate::board::file::{File, NUM_FILES};
 use crate::board::piece::{NUM_PIECES, Piece};
+use crate::board::piece::Piece::King;
 use crate::board::rank::{NUM_RANKS, Rank};
 use crate::board::square::Square;
 use crate::lookup::LOOKUP_TABLE;
@@ -33,7 +35,6 @@ pub struct Position {
 
     /// The attack_bbs for White's and Black's pieces.
     attack_bb: [Bitboard; 2],
-
 }
 
 impl Default for Position {
@@ -166,6 +167,16 @@ impl Position {
     pub fn is_in_check(&self, color: Color) -> bool {
         let king_square = self.pieces[color.to_index() as usize][Piece::King.to_index() as usize].get_active_bits()[0];
         self.is_square_attacked(king_square, color.other())
+    }
+    
+    /// Returns whether the position is legal.
+    /// Specifically, it validates that:
+    /// - both sides have exactly 1 king
+    /// - the side whose turn it not is, is not in check
+    pub fn is_legal(&self) -> bool {
+        self.pieces[White.to_index() as usize][King.to_index() as usize].get_active_bits().len() == 1 &&
+            self.pieces[Black.to_index() as usize][King.to_index() as usize].get_active_bits().len() == 1 &&
+            !self.is_in_check(self.color_to_move.other())
     }
 
     /// Initializes the attack bitboards for both colors.
@@ -510,5 +521,55 @@ mod tests {
         let position = Board::from_fen("8/ppp3kp/2b5/5P2/3P2N1/P2B4/1r3K2/8 w - - 0 28").unwrap().position;
         assert!(position.is_in_check(Color::White));
         assert!(!position.is_in_check(Color::Black));
+    }
+    
+    #[test]
+    fn is_legal_with_legal_position_returns_true() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1
+        assert!(Board::from_fen("5rk1/pppr1pp1/7p/3q4/3P4/P3R1PP/1P2Q1PK/8 w - - 5 33").unwrap().position.is_legal());
+
+        // position 2
+        assert!(Board::from_fen("8/8/7Q/8/6p1/5pBk/R4K2/8 b - - 0 67").unwrap().position.is_legal());
+
+        // position 3
+        assert!(Board::from_fen("rn2k2r/2pq1ppp/p2b4/1p4B1/2bP4/5N2/PP3PPP/R2QR1K1 b kq - 1 14").unwrap().position.is_legal());
+
+        // position 4
+        assert!(Board::from_fen("8/p1p5/2p2k2/8/2KPB1r1/8/8/8 w - - 4 37").unwrap().position.is_legal());
+
+        // position 5
+        assert!(Board::from_fen("3k4/p1p5/2B5/1K1P3r/8/8/8/8 w - - 3 41").unwrap().position.is_legal());
+
+        // position 6
+        assert!(Board::from_fen("8/ppp3kp/2b5/5P2/3P2N1/P2B4/1r3K2/8 w - - 0 28").unwrap().position.is_legal());
+    }
+
+    #[test]
+    fn is_legal_with_illegal_position_returns_false() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1
+        assert!(!Board::from_fen("8/8/7Q/8/6p1/5pBk/R4K2/8 w - - 0 67").unwrap().position.is_legal());
+
+        // position 2
+        assert!(!Board::from_fen("rn2k2r/2pq1ppp/p2b4/1p4B1/2bP4/5N2/PP3PPP/R2QR1K1 w kq - 1 14").unwrap().position.is_legal());
+
+        // position 3
+        assert!(!Board::from_fen("8/ppp3kp/2b5/5P2/3P2N1/P2B4/1r3K2/8 b - - 0 28").unwrap().position.is_legal());
+
+        // position 4
+        assert!(!Board::from_fen("7Q/ppp2Qkp/2b5/4BP2/3P2N1/P2B4/1r6/8 w - - 0 28").unwrap().position.is_legal());
+
+        // position 5
+        assert!(!Board::from_fen("7Q/ppp2Qkp/2b5/4BP2/3P2N1/P2B4/1r6/8 b - - 0 28").unwrap().position.is_legal());
+
+        // position 6
+        assert!(!Board::from_fen("2kR3r/pp5p/5p1b/2p5/8/4N3/PqP1NPPP/5RK1 w - - 2 19").unwrap().position.is_legal());
     }
 }
