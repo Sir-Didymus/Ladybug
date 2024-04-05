@@ -3,7 +3,6 @@ use crate::board::bitboard::Bitboard;
 use crate::board::castling_rights::CastlingRights;
 use crate::board::castling_rights::CastlingRights::NoRights;
 use crate::board::color::{Color, NUM_COLORS};
-use crate::board::color::Color::White;
 use crate::board::file::{File, NUM_FILES};
 use crate::board::piece::{NUM_PIECES, Piece};
 use crate::board::rank::{NUM_RANKS, Rank};
@@ -32,11 +31,9 @@ pub struct Position {
     // fields not necessary to uniquely identify a chess position, but convenient
     //-------------------------------------------------------------------------------------------
     
-    /// The attack_bb for White's pieces
-    attack_bb_white: Option<Bitboard>,
-
-    /// The attack_bb for Black's pieces
-    attack_bb_black: Option<Bitboard>,
+    /// The attack_bbs for White's and Black's pieces.
+    attack_bb: [Option<Bitboard>; 2],
+    
 }
 
 impl Default for Position {
@@ -47,9 +44,8 @@ impl Default for Position {
             pieces: [[Bitboard::new(0); 6]; 2],
             castling_rights: [NoRights; 2],
             en_passant: None,
-            color_to_move: White,
-            attack_bb_white: None,
-            attack_bb_black: None,
+            color_to_move: Color::White,
+            attack_bb: [None; 2],
         }
     }
 }
@@ -72,8 +68,7 @@ impl Position  {
             castling_rights,
             en_passant,
             color_to_move,
-            attack_bb_white: None,
-            attack_bb_black: None,
+            attack_bb: [None; 2],
         }
     }
     
