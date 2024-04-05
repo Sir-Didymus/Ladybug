@@ -42,6 +42,14 @@ impl Color {
         }
     }
     
+    /// Returns the back rank of the color.
+    pub fn back_rank(&self) -> Rank {
+        match self {
+            Color::White => Rank::First,
+            Color::Black => Rank::Eighth,
+        }
+    }
+    
     /// Returns the opponent's color.
     pub fn other(&self) -> Color {
         match self {
@@ -94,6 +102,12 @@ mod tests {
     fn pawn_rank_returns_correct_rank() {
         assert_eq!(Rank::Second, Color::White.pawn_rank());
         assert_eq!(Rank::Seventh, Color::Black.pawn_rank());
+    }
+    
+    #[test]
+    fn back_rank_returns_correct_rank() {
+        assert_eq!(Rank::First, Color::White.back_rank());
+        assert_eq!(Rank::Eighth, Color::Black.back_rank());
     }
 
     #[test]
