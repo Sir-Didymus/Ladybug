@@ -220,6 +220,13 @@ mod tests {
     }
     
     #[test]
+    fn test_partial_eq() {
+        let position1 = Position::default();
+        let position2 = Position::default();
+        assert_eq!(position1, position2);
+    }
+    
+    #[test]
     pub fn set_piece_sets_piece_on_correct_square_and_correct_bitboard() {
         let mut position = Position::default();
         
