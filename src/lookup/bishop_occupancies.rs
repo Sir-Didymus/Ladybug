@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::board::bitboard::Bitboard;
 use crate::board::file::{File};
 use crate::board::rank::{Rank};
@@ -153,7 +155,7 @@ mod tests {
                 assert!(!occupancy_bb.get_bit(Square::from_file_rank(File::A, Rank::from_index(rank_index))));
                 assert!(!occupancy_bb.get_bit(Square::from_file_rank(File::H, Rank::from_index(rank_index))));
             }
-            
+
             // assert that first and eighth rank bits are unset
             for file_index in 0..NUM_FILES {
                 assert!(!occupancy_bb.get_bit(Square::from_file_rank(File::from_index(file_index), Rank::First)));

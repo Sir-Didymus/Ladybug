@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::board::bitboard::Bitboard;
 use crate::board::file::File;
 use crate::board::rank::Rank;
