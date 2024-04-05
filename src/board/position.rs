@@ -84,6 +84,11 @@ impl Position {
     pub fn set_piece(&mut self, piece: Piece, color: Color, square: Square) {
         self.pieces[color.to_index() as usize][piece.to_index() as usize].set_bit(square);
     }
+    
+    /// Removes a piece of the given color from the given square.
+    pub fn remove_piece(&mut self, piece: Piece, color: Color, square: Square) {
+        self.pieces[color.to_index() as usize][piece.to_index() as usize].pop_bit(square);
+    }
 
     /// Returns the piece and the piece's color on the specified square.
     /// Returns None if no piece occupies the square.
@@ -290,6 +295,29 @@ mod tests {
         assert_eq!(position_before.pieces[Black.to_index() as usize][Rook.to_index() as usize], position_after.pieces[Black.to_index() as usize][Rook.to_index() as usize]);
         assert_eq!(position_before.pieces[Black.to_index() as usize][Queen.to_index() as usize], position_after.pieces[Black.to_index() as usize][Queen.to_index() as usize]);
         assert_eq!(position_before.pieces[Black.to_index() as usize][King.to_index() as usize], position_after.pieces[Black.to_index() as usize][King.to_index() as usize]);
+    }
+    
+    #[test]
+    fn test_remove_piece() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
+        let mut position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        position.remove_piece(Piece::Pawn, Color::Black, square::E2);
+        assert_eq!(position, Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position);
+
+        position.remove_piece(Piece::Pawn, Color::White, square::E2);
+        assert_eq!(position, Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1").unwrap().position);
+        
+        position.remove_piece(Piece::Knight, Color::White, square::D3);
+        assert_eq!(position, Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1").unwrap().position);
+
+        position.remove_piece(Piece::Knight, Color::Black, square::G8);
+        assert_eq!(position, Board::parse_fen("rnbqkb1r/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1").unwrap().position);
+
+        position.remove_piece(Piece::Knight, Color::Black, square::G8);
+        assert_eq!(position, Board::parse_fen("rnbqkb1r/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1").unwrap().position);
     }
 
     #[test]
