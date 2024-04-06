@@ -1,15 +1,15 @@
 use std::fmt::{Display, Formatter};
 use crate::board::bitboard::Bitboard;
 use crate::board::castling_rights::CastlingRights;
-use crate::board::castling_rights::CastlingRights::NoRights;
 use crate::board::color::{Color, NUM_COLORS};
-use crate::board::color::Color::{Black, White};
 use crate::board::file::{File, NUM_FILES};
 use crate::board::piece::{NUM_PIECES, Piece};
-use crate::board::piece::Piece::King;
+use crate::board::piece::Piece::{King};
 use crate::board::rank::{NUM_RANKS, Rank};
+use crate::board::square;
 use crate::board::square::Square;
 use crate::lookup::LOOKUP_TABLE;
+use crate::move_gen::ply::Ply;
 
 /// This struct uniquely encodes a chess position.
 /// It contains 12 bitboards, one for each piece for each color.
@@ -43,7 +43,7 @@ impl Default for Position {
     fn default() -> Self {
         let mut position = Self {
             pieces: [[Bitboard::new(0); 6]; 2],
-            castling_rights: [NoRights; 2],
+            castling_rights: [CastlingRights::NoRights; 2],
             en_passant: None,
             color_to_move: Color::White,
             attack_bb: [Bitboard::new(0); 2],
@@ -84,7 +84,7 @@ impl Position {
     pub fn set_piece(&mut self, piece: Piece, color: Color, square: Square) {
         self.pieces[color.to_index() as usize][piece.to_index() as usize].set_bit(square);
     }
-    
+
     /// Removes a piece of the given color from the given square.
     pub fn remove_piece(&mut self, piece: Piece, color: Color, square: Square) {
         self.pieces[color.to_index() as usize][piece.to_index() as usize].pop_bit(square);
@@ -167,21 +167,116 @@ impl Position {
     pub fn is_square_attacked(&self, square: Square, color: Color) -> bool {
         self.get_attack_bb(color).get_bit(square)
     }
-    
+
     /// Returns whether the king of the given color is in check
     pub fn is_in_check(&self, color: Color) -> bool {
         let king_square = self.pieces[color.to_index() as usize][Piece::King.to_index() as usize].get_active_bits()[0];
         self.is_square_attacked(king_square, color.other())
     }
-    
+
     /// Returns whether the position is legal.
     /// Specifically, it validates that:
     /// - both sides have exactly 1 king
     /// - the side whose turn it not is, is not in check
     pub fn is_legal(&self) -> bool {
-        self.pieces[White.to_index() as usize][King.to_index() as usize].get_active_bits().len() == 1 &&
-            self.pieces[Black.to_index() as usize][King.to_index() as usize].get_active_bits().len() == 1 &&
+        self.pieces[Color::White.to_index() as usize][King.to_index() as usize].get_active_bits().len() == 1 &&
+            self.pieces[Color::Black.to_index() as usize][King.to_index() as usize].get_active_bits().len() == 1 &&
             !self.is_in_check(self.color_to_move.other())
+    }
+
+    /// Returns a new position that reflects the board state where the given move (ply) has been played.
+    pub fn make_move(&self, ply: Ply) -> Position {
+        let mut position = *self;
+
+        // remove piece from old position
+        position.remove_piece(ply.piece, self.color_to_move, ply.source);
+
+        // remove capture piece
+        if let Some(piece) = ply.captured_piece { position.remove_piece(piece, self.color_to_move.other(), ply.target) }
+
+        // set piece on new position
+        match ply.promotion_piece {
+            // move is a promotion - set promotion piece
+            Some(piece) => { position.set_piece(piece, self.color_to_move, ply.target) }
+            // move is not a promotion - set piece specified in ply
+            None => { position.set_piece(ply.piece, self.color_to_move, ply.target) }
+        }
+        
+        // in case of castling, set the rook
+        if ply.piece == Piece::King {
+            match (ply.source, ply.target) {
+                // black castles queenside
+                (square::E8, square::C8) => {
+                    // remove rook from old position
+                    position.remove_piece(Piece::Rook, self.color_to_move, square::A8);
+                    // set rook on new position
+                    position.set_piece(Piece::Rook, self.color_to_move, square::D8);
+                }
+                // black castles kingside
+                (square::E8, square::G8) => {
+                    // remove rook from old position
+                    position.remove_piece(Piece::Rook, self.color_to_move, square::H8);
+                    // set rook on new position
+                    position.set_piece(Piece::Rook, self.color_to_move, square::F8);
+                }
+                // white castles queenside
+                (square::E1, square::C1) => {
+                    // remove rook from old position
+                    position.remove_piece(Piece::Rook, self.color_to_move, square::A1);
+                    // set rook on new position
+                    position.set_piece(Piece::Rook, self.color_to_move, square::D1);
+                }
+                // white castles kingside
+                (square::E1, square::G1) => {
+                    // remove rook from old position
+                    position.remove_piece(Piece::Rook, self.color_to_move, square::H1);
+                    // set rook on new position
+                    position.set_piece(Piece::Rook, self.color_to_move, square::F1);
+                }
+                _other => {}
+            }
+        }
+
+        // in case of en passant, remove opponent pawn from 4th or 5th rank
+        if let Some(square) = self.en_passant {
+            if ply.piece == Piece::Pawn && square == ply.target {
+                position.remove_piece(Piece::Pawn, self.color_to_move.other(), Square::from_file_rank(ply.target.get_file(), self.color_to_move.other().double_pawn_push_target_rank()))
+            }
+        }
+        
+        // update castling_rights
+        if ply.piece == King {
+            // move is a king move - no rights
+            position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::NoRights;
+        } else if ply.piece == Piece::Rook && ply.source == Square::from_file_rank(File::A, self.color_to_move.back_rank()) {
+            // move is A file rook move - remove queenside rights
+            match self.castling_rights[self.color_to_move.to_index() as usize] {
+                CastlingRights::Both => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::KingSide,
+                CastlingRights::KingSide => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::KingSide,
+                _other => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::NoRights,
+            }
+            
+        } else if ply.piece == Piece::Rook && ply.source == Square::from_file_rank(File::H, self.color_to_move.back_rank()) {
+            // move is H file rook move - remove kingside rights
+            match self.castling_rights[self.color_to_move.to_index() as usize] {
+                CastlingRights::Both => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::QueenSide,
+                CastlingRights::QueenSide => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::QueenSide,
+                _other => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::NoRights,
+            }
+        }
+        
+        // update en_passant
+        if ply.piece == Piece::Pawn && ply.source.get_rank() == self.color_to_move.pawn_rank() && 
+            ply.target.get_rank() == self.color_to_move.double_pawn_push_target_rank() {
+            position.en_passant = Some(Square::from_file_rank(ply.source.get_file(), self.color_to_move.other().en_passant_target_rank()))
+        } else {
+            position.en_passant = None;
+        }
+        
+        // update color_to_move
+        position.color_to_move = self.color_to_move.other();
+        
+        position
     }
 
     /// Initializes the attack bitboards for both colors.
@@ -244,13 +339,14 @@ mod tests {
     use crate::board::square::{A1, A3, E1, E4, F2, F3, G3, H7, H8};
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
+    use crate::move_gen::ply::Ply;
 
     #[test]
     fn default_returns_position_with_default_values() {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
-        
+
         let position = Position::default();
         assert_eq!([[Bitboard::new(0); 6]; 2], position.pieces);
         assert_eq!([NoRights; 2], position.castling_rights);
@@ -296,20 +392,20 @@ mod tests {
         assert_eq!(position_before.pieces[Black.to_index() as usize][Queen.to_index() as usize], position_after.pieces[Black.to_index() as usize][Queen.to_index() as usize]);
         assert_eq!(position_before.pieces[Black.to_index() as usize][King.to_index() as usize], position_after.pieces[Black.to_index() as usize][King.to_index() as usize]);
     }
-    
+
     #[test]
     fn test_remove_piece() {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
-        
+
         let mut position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         position.remove_piece(Piece::Pawn, Color::Black, square::E2);
         assert_eq!(position, Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position);
 
         position.remove_piece(Piece::Pawn, Color::White, square::E2);
         assert_eq!(position, Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1").unwrap().position);
-        
+
         position.remove_piece(Piece::Knight, Color::White, square::D3);
         assert_eq!(position, Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1").unwrap().position);
 
@@ -325,7 +421,7 @@ mod tests {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
-        
+
         let mut position = Position::default();
         position.set_piece(Knight, Black, E4);
         position.set_piece(King, White, H8);
@@ -347,7 +443,7 @@ mod tests {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
-        
+
         // position 1 (starting position)
         let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         assert_eq!(0xffff, position.get_occupancy(White).value);
@@ -369,7 +465,7 @@ mod tests {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
-        
+
         // position 1 (starting position)
         let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         assert_eq!(0xffff00000000ffff, position.get_occupancies().value);
@@ -388,7 +484,7 @@ mod tests {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
-        
+
         let position = Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         let expected_output = "8  r  n  b  q  k  b  n  r  \n7  p  p  p  p  p  p  p  p  \n6  .  .  .  .  .  .  .  .  \n5  .  .  .  .  .  .  .  .  \n4  .  .  .  .  .  .  .  .  \n3  .  .  .  .  .  .  .  .  \n2  P  P  P  P  P  P  P  P  \n1  R  N  B  Q  K  B  N  R  \n   a  b  c  d  e  f  g  h\n\nMove: White\nCastling: Both - Both\nEn Passant: None\n";
         assert_eq!(expected_output, format!("{}", position));
@@ -550,7 +646,7 @@ mod tests {
         assert!(position.is_in_check(Color::White));
         assert!(!position.is_in_check(Color::Black));
     }
-    
+
     #[test]
     fn is_legal_with_legal_position_returns_true() {
         let mut lookup = LookupTable::default();
@@ -599,5 +695,353 @@ mod tests {
 
         // position 6
         assert!(!Board::from_fen("2kR3r/pp5p/5p1b/2p5/8/4N3/PqP1NPPP/5RK1 w - - 2 19").unwrap().position.is_legal());
+    }
+    
+    #[test]
+    fn test_make_move() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // e2-e4
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position.make_move(Ply {
+            source: square::E2,
+            target: square::E4,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1").unwrap().position, position);
+        
+        // e7-e6
+        let position = position.make_move(Ply {
+            source: square::E7,
+            target: square::E6,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2").unwrap().position, position);
+
+        // g1-f3
+        let position = position.make_move(Ply {
+            source: square::G1,
+            target: square::F3,
+            piece: Piece::Knight,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqkbnr/pppp1ppp/4p3/8/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2").unwrap().position, position);
+
+        // d7-d5
+        let position = position.make_move(Ply {
+            source: square::D7,
+            target: square::D5,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqkbnr/ppp2ppp/4p3/3p4/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq d6 0 3").unwrap().position, position);
+
+        // e4-d5
+        let position = position.make_move(Ply {
+            source: square::E4,
+            target: square::D5,
+            piece: Piece::Pawn,
+            captured_piece: Some(Piece::Pawn),
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqkbnr/ppp2ppp/4p3/3P4/8/5N2/PPPP1PPP/RNBQKB1R b KQkq - 0 3").unwrap().position, position);
+
+        // e6-d5
+        let position = position.make_move(Ply {
+            source: square::E6,
+            target: square::D5,
+            piece: Piece::Pawn,
+            captured_piece: Some(Piece::Pawn),
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqkbnr/ppp2ppp/8/3p4/8/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 4").unwrap().position, position);
+
+        // d1-e2
+        let position = position.make_move(Ply {
+            source: square::D1,
+            target: square::E2,
+            piece: Piece::Queen,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqkbnr/ppp2ppp/8/3p4/8/5N2/PPPPQPPP/RNB1KB1R b KQkq - 1 4").unwrap().position, position);
+
+        // f8-e7
+        let position = position.make_move(Ply {
+            source: square::F8,
+            target: square::E7,
+            piece: Piece::Bishop,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqk1nr/ppp1bppp/8/3p4/8/5N2/PPPPQPPP/RNB1KB1R w KQkq - 2 5").unwrap().position, position);
+
+        // e2-e7
+        let position = position.make_move(Ply {
+            source: square::E2,
+            target: square::E7,
+            piece: Piece::Queen,
+            captured_piece: Some(Bishop),
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqk1nr/ppp1Qppp/8/3p4/8/5N2/PPPP1PPP/RNB1KB1R b KQkq - 0 5").unwrap().position, position);
+
+        // g8-e7
+        let position = position.make_move(Ply {
+            source: square::G8,
+            target: square::E7,
+            piece: Piece::Knight,
+            captured_piece: Some(Queen),
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqk2r/ppp1nppp/8/3p4/8/5N2/PPPP1PPP/RNB1KB1R w KQkq - 0 6").unwrap().position, position);
+
+        // e1-e2
+        let position = position.make_move(Ply {
+            source: square::E1,
+            target: square::E2,
+            piece: Piece::King,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqk2r/ppp1nppp/8/3p4/8/5N2/PPPPKPPP/RNB2B1R b kq - 1 6").unwrap().position, position);
+
+        // h8-g8
+        let position = position.make_move(Ply {
+            source: square::H8,
+            target: square::G8,
+            piece: Piece::Rook,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqk1r1/ppp1nppp/8/3p4/8/5N2/PPPPKPPP/RNB2B1R w q - 2 7").unwrap().position, position);
+
+        // h2-h4
+        let position = position.make_move(Ply {
+            source: square::H2,
+            target: square::H4,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqk1r1/ppp1nppp/8/3p4/7P/5N2/PPPPKPP1/RNB2B1R b q h3 0 7").unwrap().position, position);
+
+        // g7-g5
+        let position = position.make_move(Ply {
+            source: square::G7,
+            target: square::G5,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqk1r1/ppp1np1p/8/3p2p1/7P/5N2/PPPPKPP1/RNB2B1R w q g6 0 8").unwrap().position, position);
+
+        // h4-g5
+        let position = position.make_move(Ply {
+            source: square::H4,
+            target: square::G5,
+            piece: Piece::Pawn,
+            captured_piece: Some(Pawn),
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqk1r1/ppp1np1p/8/3p2P1/8/5N2/PPPPKPP1/RNB2B1R b q - 0 8").unwrap().position, position);
+
+        // h7-h6
+        let position = position.make_move(Ply {
+            source: square::H7,
+            target: square::H6,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqk1r1/ppp1np2/7p/3p2P1/8/5N2/PPPPKPP1/RNB2B1R w q - 0 9").unwrap().position, position);
+
+        // g5-h6
+        let position = position.make_move(Ply {
+            source: square::G5,
+            target: square::H6,
+            piece: Piece::Pawn,
+            captured_piece: Some(Piece::Pawn),
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("rnbqk1r1/ppp1np2/7P/3p4/8/5N2/PPPPKPP1/RNB2B1R b q - 0 9").unwrap().position, position);
+
+        // b8-c6
+        let position = position.make_move(Ply {
+            source: square::B8,
+            target: square::C6,
+            piece: Piece::Knight,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("r1bqk1r1/ppp1np2/2n4P/3p4/8/5N2/PPPPKPP1/RNB2B1R w q - 1 10").unwrap().position, position);
+
+        // h6-h7
+        let position = position.make_move(Ply {
+            source: square::H6,
+            target: square::H7,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("r1bqk1r1/ppp1np1P/2n5/3p4/8/5N2/PPPPKPP1/RNB2B1R b q - 0 10").unwrap().position, position);
+
+        // c8-h3
+        let position = position.make_move(Ply {
+            source: square::C8,
+            target: square::H3,
+            piece: Piece::Bishop,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("r2qk1r1/ppp1np1P/2n5/3p4/8/5N1b/PPPPKPP1/RNB2B1R w q - 1 11").unwrap().position, position);
+
+        // h1-h3
+        let position = position.make_move(Ply {
+            source: square::H1,
+            target: square::H3,
+            piece: Piece::Rook,
+            captured_piece: Some(Bishop),
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("r2qk1r1/ppp1np1P/2n5/3p4/8/5N1R/PPPPKPP1/RNB2B2 b q - 0 11").unwrap().position, position);
+
+        // d8-d7
+        let position = position.make_move(Ply {
+            source: square::D8,
+            target: square::D7,
+            piece: Piece::Queen,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("r3k1r1/pppqnp1P/2n5/3p4/8/5N1R/PPPPKPP1/RNB2B2 w q - 1 12").unwrap().position, position);
+
+        // a2-a4
+        let position = position.make_move(Ply {
+            source: square::A2,
+            target: square::A4,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("r3k1r1/pppqnp1P/2n5/3p4/P7/5N1R/1PPPKPP1/RNB2B2 b q a3 0 12").unwrap().position, position);
+
+        // e8-C8
+        let position = position.make_move(Ply {
+            source: square::E8,
+            target: square::C8,
+            piece: Piece::King,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("2kr2r1/pppqnp1P/2n5/3p4/P7/5N1R/1PPPKPP1/RNB2B2 w - - 1 13").unwrap().position, position);
+
+        // h7-g8
+        let position = position.make_move(Ply {
+            source: square::H7,
+            target: square::G8,
+            piece: Piece::Pawn,
+            captured_piece: Some(Rook),
+            promotion_piece: Some(Queen),
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("2kr2Q1/pppqnp2/2n5/3p4/P7/5N1R/1PPPKPP1/RNB2B2 b - - 0 13").unwrap().position, position);
+
+        // d5-d4
+        let position = position.make_move(Ply {
+            source: square::D5,
+            target: square::D4,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("2kr2Q1/pppqnp2/2n5/8/P2p4/5N1R/1PPPKPP1/RNB2B2 w - - 0 14").unwrap().position, position);
+
+        // c2-c4
+        let position = position.make_move(Ply {
+            source: square::C2,
+            target: square::C4,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("2kr2Q1/pppqnp2/2n5/8/P1Pp4/5N1R/1P1PKPP1/RNB2B2 b - c3 0 14").unwrap().position, position);
+
+        // d4-c3
+        let position = position.make_move(Ply {
+            source: square::D4,
+            target: square::C3,
+            piece: Piece::Pawn,
+            captured_piece: Some(Pawn),
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("2kr2Q1/pppqnp2/2n5/8/P7/2p2N1R/1P1PKPP1/RNB2B2 w - - 0 15").unwrap().position, position);
+
+        // a4-a5
+        let position = position.make_move(Ply {
+            source: square::A4,
+            target: square::A5,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("2kr2Q1/pppqnp2/2n5/P7/8/2p2N1R/1P1PKPP1/RNB2B2 b - - 0 15").unwrap().position, position);
+
+        // b7-b5
+        let position = position.make_move(Ply {
+            source: square::B7,
+            target: square::B5,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("2kr2Q1/p1pqnp2/2n5/Pp6/8/2p2N1R/1P1PKPP1/RNB2B2 w - b6 0 16").unwrap().position, position);
+
+        // a5-b6
+        let position = position.make_move(Ply {
+            source: square::A5,
+            target: square::B6,
+            piece: Piece::Pawn,
+            captured_piece: Some(Pawn),
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("2kr2Q1/p1pqnp2/1Pn5/8/8/2p2N1R/1P1PKPP1/RNB2B2 b - - 0 16").unwrap().position, position);
     }
 }
