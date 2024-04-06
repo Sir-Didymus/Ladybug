@@ -127,5 +127,41 @@ mod tests {
         let position = Board::from_fen("r1b1kbnr/1pp3pp/p1n5/4Bp2/2P4q/1P2P3/P2P1PPP/RN1QKB1R w KQkq - 1 8").unwrap().position;
         let move_list = pawn_moves::generate_quiet_pawn_moves(position);
         assert_eq!(10, move_list.len());
+
+        // position 5
+
+        let position = Board::from_fen("r3kbnr/1p4pp/2p5/p1PbB3/Pn1PPp1q/1P3PPP/8/RN1QKB1R w KQkq - 1 14").unwrap().position;
+        let move_list = pawn_moves::generate_quiet_pawn_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 6
+
+        let position = Board::from_fen("r3kbnr/8/8/2PbB3/Pn1PP2q/1P3PPP/7R/RN1QKB2 b Qkq - 2 14").unwrap().position;
+        let move_list = pawn_moves::generate_quiet_pawn_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 7
+
+        let position = Board::from_fen("r3kbnr/8/8/p1PbB3/Pn1PP2q/1P3PPP/7R/RN1QKB2 b Qkq - 2 14").unwrap().position;
+        let move_list = pawn_moves::generate_quiet_pawn_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 8
+
+        let position = Board::from_fen("r3kbnr/1p6/8/2PbB3/Pn1PP2q/1P3PPP/7R/RN1QKB2 b Qkq - 2 14").unwrap().position;
+        let move_list = pawn_moves::generate_quiet_pawn_moves(position);
+        assert_eq!(2, move_list.len());
+
+        // position 9
+
+        let position = Board::from_fen("r3kbnr/1p6/8/1QPbB3/Pn1PP2q/1P3PPP/7R/R3KB2 b Qkq - 2 14").unwrap().position;
+        let move_list = pawn_moves::generate_quiet_pawn_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 10
+
+        let position = Board::from_fen("r3kbnr/1p4Q1/8/1RPbB3/Pn1PP2q/1P3PPP/7R/4KB2 b kq - 2 14").unwrap().position;
+        let move_list = pawn_moves::generate_quiet_pawn_moves(position);
+        assert_eq!(1, move_list.len());
     }
 }
