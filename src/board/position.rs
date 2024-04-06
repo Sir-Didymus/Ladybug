@@ -275,6 +275,8 @@ impl Position {
         // update color_to_move
         position.color_to_move = self.color_to_move.other();
 
+        position.initialize_attack_bb();
+
         position
     }
 
@@ -644,6 +646,11 @@ mod tests {
         let position = Board::from_fen("8/ppp3kp/2b5/5P2/3P2N1/P2B4/1r3K2/8 w - - 0 28").unwrap().position;
         assert!(position.is_in_check(Color::White));
         assert!(!position.is_in_check(Color::Black));
+
+        // position 7
+        let position = Board::from_fen("r1b1kbnr/1pp3pp/p1n5/4Bp2/2P4q/1P2PP2/P2P2PP/RN1QKB1R b KQkq - 1 8").unwrap().position;
+        assert!(position.is_in_check(Color::White));
+        assert!(!position.is_in_check(Color::Black));
     }
 
     #[test]
@@ -694,6 +701,9 @@ mod tests {
 
         // position 6
         assert!(!Board::from_fen("2kR3r/pp5p/5p1b/2p5/8/4N3/PqP1NPPP/5RK1 w - - 2 19").unwrap().position.is_legal());
+
+        // position 7
+        assert!(!Board::from_fen("r1b1kbnr/1pp3pp/p1n5/4Bp2/2P4q/1P2PP2/P2P2PP/RN1QKB1R b KQkq - 1 8").unwrap().position.is_legal());
     }
 
     #[test]
@@ -701,6 +711,8 @@ mod tests {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1
 
         // e2-e4
         let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position.make_move(Ply {
@@ -1042,5 +1054,18 @@ mod tests {
         });
         println!("{position}");
         assert_eq!(Board::from_fen("2kr2Q1/p1pqnp2/1Pn5/8/8/2p2N1R/1P1PKPP1/RNB2B2 b - - 0 16").unwrap().position, position);
+
+        // position 2
+
+        // e2-e4
+        let position = Board::from_fen("r1b1kbnr/1pp3pp/p1n5/4Bp2/2P4q/1P2P3/P2P1PPP/RN1QKB1R w KQkq - 1 8").unwrap().position.make_move(Ply {
+            source: square::F2,
+            target: square::F3,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        });
+        println!("{position}");
+        assert_eq!(Board::from_fen("r1b1kbnr/1pp3pp/p1n5/4Bp2/2P4q/1P2PP2/P2P2PP/RN1QKB1R b KQkq - 1 8").unwrap().position, position);
     }
 }
