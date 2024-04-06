@@ -78,7 +78,15 @@ use crate::move_gen::ply::Ply;
                 }
             }
         }
-        move_list
+        
+        // check for legality
+        let mut legal_move_list: Vec<Ply> = Vec::new();
+        for ply in move_list {
+            if position.make_move(ply).is_legal() {
+                legal_move_list.push(ply);
+            }
+        }
+        legal_move_list
     }
 
 #[cfg(test)]
