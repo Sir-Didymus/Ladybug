@@ -9,8 +9,9 @@ use crate::move_gen::ply::Ply;
 /// Generates all legal pawn moves for the given position.
 pub fn generate_pawn_moves(position: Position) -> Vec<Ply> {
     let mut move_list: Vec<Ply> = Vec::new();
-    let mut quiet_pawn_moves = generate_quiet_pawn_moves(position);
-    move_list.append(&mut quiet_pawn_moves);
+    move_list.append(&mut generate_quiet_pawn_moves(position));
+    move_list.append(&mut generate_attacking_pawn_moves(position));
+    move_list.append(&mut generate_en_passant_moves(position));
     move_list
 }
 
@@ -443,5 +444,72 @@ mod tests {
         assert_eq!(1, move_list.len());
         assert_eq!(square::G4, move_list[0].source);
         assert_eq!(square::F3, move_list[0].target);
+    }
+
+    #[test]
+    fn test_generate_pawn_moves() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1 (starting position)
+
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let move_list = pawn_moves::generate_pawn_moves(position);
+        assert_eq!(16, move_list.len());
+
+        // position 2
+
+        let position = Board::from_fen("1r6/1p1R2pk/2pp3p/p3p3/4P3/P2P3P/1PP3PN/7K b - - 2 27").unwrap().position;
+        let move_list = pawn_moves::generate_pawn_moves(position);
+        assert_eq!(6, move_list.len());
+
+        // position 3
+
+        let position = Board::from_fen("2k2b1r/ppp1pppp/5n2/q3P3/6b1/2N5/PPP1BPPP/R1Br1RK1 w - - 0 10").unwrap().position;
+        let move_list = pawn_moves::generate_pawn_moves(position);
+        assert_eq!(11, move_list.len());
+
+        // position 4
+
+        let position = Board::from_fen("1nkrr3/5pp1/1bp2q1p/p2p4/3P1PB1/P3B2P/1PPQ4/2KRR3 b - - 1 22").unwrap().position;
+        let move_list = pawn_moves::generate_pawn_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 5
+
+        let position = Board::from_fen("1r3rk1/p2p2pp/b1p2n2/4p3/4pP2/7P/PPP3P1/2K1R1NR b - f3 0 16").unwrap().position;
+        let move_list = pawn_moves::generate_pawn_moves(position);
+        assert_eq!(10, move_list.len());
+
+        // position 6
+
+        let position = Board::from_fen("8/2p5/1pp1k1p1/p3P1Pp/P1nP3K/2P4P/2b5/2B5 w - - 0 32").unwrap().position;
+        let move_list = pawn_moves::generate_pawn_moves(position);
+        assert_eq!(1, move_list.len());
+
+        // position 7
+
+        let position = Board::from_fen("8/1p3nk1/p2p2pp/P2P4/2P2PN1/1P5P/4R1K1/8 b - - 0 36").unwrap().position;
+        let move_list = pawn_moves::generate_pawn_moves(position);
+        assert_eq!(4, move_list.len());
+
+        // position 8
+
+        let position = Board::from_fen("6k1/1PQ2pp1/4p2p/4P3/8/7P/r3rPK1/8 w - - 1 39").unwrap().position;
+        let move_list = pawn_moves::generate_pawn_moves(position);
+        assert_eq!(5, move_list.len());
+
+        // position 9
+
+        let position = Board::from_fen("rnb2rk1/1p3pp1/1bpp1q1p/p3p3/P2PP3/1NP2N2/1P2BPPP/R2QK2R b KQ - 0 11").unwrap().position;
+        let move_list = pawn_moves::generate_pawn_moves(position);
+        assert_eq!(6, move_list.len());
+
+        // position 10
+
+        let position = Board::from_fen("r1bqk1nr/pp1pbppp/2nP4/8/8/8/PP2QPPP/RNB1KBNR w KQkq - 3 9").unwrap().position;
+        let move_list = pawn_moves::generate_pawn_moves(position);
+        assert_eq!(11, move_list.len());
     }
 }
