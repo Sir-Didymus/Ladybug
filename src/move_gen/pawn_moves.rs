@@ -1,6 +1,7 @@
 use crate::board::color::Color;
 use crate::board::piece::Piece;
 use crate::board::position::Position;
+use crate::lookup::LOOKUP_TABLE;
 use crate::move_gen::ply::Ply;
 
 /// Generates all legal pawn moves for the given position.
@@ -89,6 +90,76 @@ fn generate_quiet_pawn_moves(position: Position) -> Vec<Ply> {
     legal_move_list
 }
 
+/// Generates all legal attacking pawn moves for the given position.
+fn generate_attacking_pawn_moves(position: Position) -> Vec<Ply> {
+    // get a reference to the lookup table
+    let lookup = LOOKUP_TABLE.get().unwrap();
+    
+    let mut move_list: Vec<Ply> = Vec::new();
+
+    // get opposite color occupancy
+    let occupancy = position.get_occupancy(position.color_to_move.other());
+
+    // get pawn bitboard for the color to move
+    let pawn_bb = position.pieces[position.color_to_move.to_index() as usize][Piece::Pawn.to_index() as usize];
+
+    // get all squares with a pawn on it
+    let active_squares = pawn_bb.get_active_bits();
+
+    // loop over source squares and calculate possible moves
+    for source in active_squares {
+        // lookup the attack bb for the pawn on the source square
+        let mut target_attack_bb = lookup.get_pawn_attacks(source, position.color_to_move);
+        
+        // `and` the attack bb with the opponent's occupancy (because a capture is only possible if an enemy pawn occupies the target square)
+        target_attack_bb.value &= occupancy.value;
+
+        // these are the targets that we know are occupied by an enemy pawn
+        let active_squares = target_attack_bb.get_active_bits();
+
+        // loop over target squares and create moves
+        for target in active_squares {
+            // get the type of the attacked piece
+            let attacked_piece= match position.get_piece(target) {
+                Some((piece, _color)) => piece,
+                None => continue,
+            };
+            
+            // check if target square is on the promotion rank
+            if target.get_rank() == position.color_to_move.promotion_rank() {
+                // move is a promotion - add all possible promotion moves
+                for piece_index in Piece::Knight.to_index() as usize..Piece::Queen.to_index() as usize + 1 {
+                    move_list.push(Ply {
+                        source,
+                        target,
+                        piece: Piece::Pawn,
+                        captured_piece: Some(attacked_piece),
+                        promotion_piece: Some(Piece::from_index(piece_index as u8)),
+                    });
+                }
+            } else {
+                // move is not a promotion
+                move_list.push(Ply {
+                    source,
+                    target,
+                    piece: Piece::Pawn,
+                    captured_piece: Some(attacked_piece),
+                    promotion_piece: None,
+                });
+            }
+        }
+    }
+
+    // check for legality
+    let mut legal_move_list: Vec<Ply> = Vec::new();
+    for ply in move_list {
+        if position.make_move(ply).is_legal() {
+            legal_move_list.push(ply);
+        }
+    }
+    legal_move_list
+}
+
 #[cfg(test)]
 mod tests {
     use crate::board::Board;
@@ -160,6 +231,85 @@ mod tests {
 
         let position = Board::from_fen("r3kbnr/1p4Q1/8/1RPbB3/Pn1PP2q/1P3PPP/7R/4KB2 b kq - 2 14").unwrap().position;
         let move_list = pawn_moves::generate_quiet_pawn_moves(position);
+        assert_eq!(1, move_list.len());
+
+        // position 11
+
+        let position = Board::from_fen("rnb1kb1r/ppp2ppp/3pp2n/3P4/3KP1q1/8/PPP2PPP/RNBQ1BNR b kq - 4 6").unwrap().position;
+        let move_list = pawn_moves::generate_quiet_pawn_moves(position);
+        assert_eq!(11, move_list.len());
+    }
+
+    #[test]
+    fn test_generate_attacking_pawn_moves() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1 (starting position)
+
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 2
+
+        let position = Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
+        assert_eq!(1, move_list.len());
+
+        // position 3
+
+        let position = Board::from_fen("rnbqkbnr/pp3ppp/8/2ppp3/1P2P1P1/2N5/P1PP1P1P/R1BQKBNR b KQkq - 1 4").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
+        assert_eq!(2, move_list.len());
+
+        // position 4
+
+        let position = Board::from_fen("rnbqkbnr/1p5p/8/p2pppp1/1p1PPPPP/P1N5/2P5/R1BQKBNR b KQkq - 0 8").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
+        assert_eq!(9, move_list.len());
+
+        // position 5
+
+        let position = Board::from_fen("rnbqkbnr/1p5p/8/p2pppp1/3PPPPP/P1N5/2p4R/1RBQKBN1 b kq - 1 10").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
+        assert_eq!(15, move_list.len());
+
+        // position 6
+
+        let position = Board::from_fen("rnb1kbnr/1p2q2p/8/p2p1pp1/3PPpPP/PpN5/2P4R/1RBQKBN1 w kq - 2 11").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
+        assert_eq!(3, move_list.len());
+
+        // position 7
+
+        let position = Board::from_fen("rnb1kbnr/1p5p/8/p2p1pp1/3PqpPP/PpN4N/2P4R/1RBQKB2 w kq - 0 12").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 8
+
+        let position = Board::from_fen("rnb1kbnr/1p5p/8/p2p1pp1/3P1pPP/PpNq3N/2PK3R/1RBQ1B2 w kq - 2 13").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
+        assert_eq!(1, move_list.len());
+
+        // position 9
+
+        let position = Board::from_fen("rnb1k1n1/1p4P1/8/3p1p1r/p2P1pP1/PpNP3N/3K3R/1RBQ1B2 w q - 1 17").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
+        assert_eq!(2, move_list.len());
+
+        // position 10
+
+        let position = Board::from_fen("rnb3n1/1p2k1P1/8/1N1p1P1r/p2P1p2/P2P3N/1p1K4/1RBQ1B2 b - - 0 20").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
+        assert_eq!(4, move_list.len());
+
+        // position 11
+
+        let position = Board::from_fen("r1b3n1/1p2k1P1/8/1N1pnPNr/p2P1p2/P2P4/8/1RKQ1B2 w - - 1 23").unwrap().position;
+        let move_list = pawn_moves::generate_attacking_pawn_moves(position);
         assert_eq!(1, move_list.len());
     }
 }
