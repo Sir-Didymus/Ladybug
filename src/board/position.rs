@@ -201,7 +201,7 @@ impl Position {
             // move is not a promotion - set piece specified in ply
             None => { position.set_piece(ply.piece, self.color_to_move, ply.target) }
         }
-        
+
         // in case of castling, set the rook
         if ply.piece == Piece::King {
             match (ply.source, ply.target) {
@@ -243,7 +243,7 @@ impl Position {
                 position.remove_piece(Piece::Pawn, self.color_to_move.other(), Square::from_file_rank(ply.target.get_file(), self.color_to_move.other().double_pawn_push_target_rank()))
             }
         }
-        
+
         // update castling_rights
         if ply.piece == King {
             // move is a king move - no rights
@@ -255,7 +255,6 @@ impl Position {
                 CastlingRights::KingSide => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::KingSide,
                 _other => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::NoRights,
             }
-            
         } else if ply.piece == Piece::Rook && ply.source == Square::from_file_rank(File::H, self.color_to_move.back_rank()) {
             // move is H file rook move - remove kingside rights
             match self.castling_rights[self.color_to_move.to_index() as usize] {
@@ -264,18 +263,18 @@ impl Position {
                 _other => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::NoRights,
             }
         }
-        
+
         // update en_passant
-        if ply.piece == Piece::Pawn && ply.source.get_rank() == self.color_to_move.pawn_rank() && 
+        if ply.piece == Piece::Pawn && ply.source.get_rank() == self.color_to_move.pawn_rank() &&
             ply.target.get_rank() == self.color_to_move.double_pawn_push_target_rank() {
             position.en_passant = Some(Square::from_file_rank(ply.source.get_file(), self.color_to_move.other().en_passant_target_rank()))
         } else {
             position.en_passant = None;
         }
-        
+
         // update color_to_move
         position.color_to_move = self.color_to_move.other();
-        
+
         position
     }
 
@@ -696,7 +695,7 @@ mod tests {
         // position 6
         assert!(!Board::from_fen("2kR3r/pp5p/5p1b/2p5/8/4N3/PqP1NPPP/5RK1 w - - 2 19").unwrap().position.is_legal());
     }
-    
+
     #[test]
     fn test_make_move() {
         let mut lookup = LookupTable::default();
@@ -713,7 +712,7 @@ mod tests {
         });
         println!("{position}");
         assert_eq!(Board::from_fen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1").unwrap().position, position);
-        
+
         // e7-e6
         let position = position.make_move(Ply {
             source: square::E7,
