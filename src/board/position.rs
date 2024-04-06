@@ -275,6 +275,7 @@ impl Position {
         // update color_to_move
         position.color_to_move = self.color_to_move.other();
 
+        // initialize the attack bitboards for the new position
         position.initialize_attack_bb();
 
         position
