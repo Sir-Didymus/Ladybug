@@ -1,6 +1,8 @@
 use crate::board::color::Color;
+use crate::board::file::File;
 use crate::board::piece::Piece;
 use crate::board::position::Position;
+use crate::board::square::Square;
 use crate::lookup::LOOKUP_TABLE;
 use crate::move_gen::ply::Ply;
 
@@ -79,7 +81,6 @@ fn generate_quiet_pawn_moves(position: Position) -> Vec<Ply> {
             }
         }
     }
-
     // check for legality
     let mut legal_move_list: Vec<Ply> = Vec::new();
     for ply in move_list {
@@ -149,7 +150,53 @@ fn generate_attacking_pawn_moves(position: Position) -> Vec<Ply> {
             }
         }
     }
+    // check for legality
+    let mut legal_move_list: Vec<Ply> = Vec::new();
+    for ply in move_list {
+        if position.make_move(ply).is_legal() {
+            legal_move_list.push(ply);
+        }
+    }
+    legal_move_list
+}
 
+/// Generates all legal en passant moves for the given position.
+fn generate_en_passant_moves(position: Position) -> Vec<Ply> {
+    let mut move_list: Vec<Ply> = Vec::new();
+    if let Some(target_square) = position.en_passant {
+        // get pawn bitboard for the color to move
+        let pawn_bb = position.pieces[position.color_to_move.to_index() as usize][Piece::Pawn.to_index() as usize];
+        
+        // the rank of the pawns that can capture en passant
+        let source_rank = position.color_to_move.other().double_pawn_push_target_rank();
+        
+        // check file to the left for pawn that can capture en passant
+        if target_square.get_file() != File::A {
+            let source = Square::from_file_rank(target_square.get_file().left(), source_rank);
+            if pawn_bb.get_bit(source) {
+                move_list.push(Ply {
+                    source,
+                    target: target_square,
+                    piece: Piece::Pawn,
+                    captured_piece: Some(Piece::Pawn),
+                    promotion_piece: None,
+                })
+            }
+        }
+        // check file to the right for pawn that can capture en passant
+        if target_square.get_file() != File::H {
+            let source = Square::from_file_rank(target_square.get_file().right(), source_rank);
+            if pawn_bb.get_bit(source) {
+                move_list.push(Ply {
+                    source,
+                    target: target_square,
+                    piece: Piece::Pawn,
+                    captured_piece: Some(Piece::Pawn),
+                    promotion_piece: None,
+                })
+            }
+        }
+    }
     // check for legality
     let mut legal_move_list: Vec<Ply> = Vec::new();
     for ply in move_list {
@@ -162,7 +209,7 @@ fn generate_attacking_pawn_moves(position: Position) -> Vec<Ply> {
 
 #[cfg(test)]
 mod tests {
-    use crate::board::Board;
+    use crate::board::{Board, square};
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
     use crate::move_gen::pawn_moves;
@@ -311,5 +358,90 @@ mod tests {
         let position = Board::from_fen("r1b3n1/1p2k1P1/8/1N1pnPNr/p2P1p2/P2P4/8/1RKQ1B2 w - - 1 23").unwrap().position;
         let move_list = pawn_moves::generate_attacking_pawn_moves(position);
         assert_eq!(1, move_list.len());
+    }
+
+    #[test]
+    fn test_generate_en_passant_moves() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1 (starting position)
+
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let move_list = pawn_moves::generate_en_passant_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 2
+
+        let position = Board::from_fen("rnbqkbnr/1pp1pppp/p7/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3").unwrap().position;
+        let move_list = pawn_moves::generate_en_passant_moves(position);
+        assert_eq!(1, move_list.len());
+        assert_eq!(square::E5, move_list[0].source);
+        assert_eq!(square::D6, move_list[0].target);
+
+        // position 3
+
+        let position = Board::from_fen("rnbqkbnr/1pp1p1pp/8/p2pPpP1/8/8/PPPP1P1P/RNBQKBNR w KQkq f6 0 5").unwrap().position;
+        let move_list = pawn_moves::generate_en_passant_moves(position);
+        assert_eq!(2, move_list.len());
+        assert_eq!(square::E5, move_list[0].source);
+        assert_eq!(square::F6, move_list[0].target);
+        assert_eq!(square::G5, move_list[1].source);
+        assert_eq!(square::F6, move_list[1].target);
+
+        // position 4
+
+        let position = Board::from_fen("rnbqkbnr/1pp1p1p1/8/p2pPpPp/8/5P2/PPPP3P/RNBQKBNR w KQkq h6 0 6").unwrap().position;
+        let move_list = pawn_moves::generate_en_passant_moves(position);
+        assert_eq!(1, move_list.len());
+        assert_eq!(square::G5, move_list[0].source);
+        assert_eq!(square::H6, move_list[0].target);
+
+        // position 5
+
+        let position = Board::from_fen("rn1qkbn1/1bpp1ppr/1p5p/p2Pp3/8/P3PK1P/1PP2PP1/RNBQ1BNR w q e6 0 8").unwrap().position;
+        let move_list = pawn_moves::generate_en_passant_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 6
+
+        let position = Board::from_fen("rn1qkbn1/1b1ppppr/1p5p/p1pP4/8/P3PK1P/1PP2PP1/RNBQ1BNR w q c6 0 8").unwrap().position;
+        let move_list = pawn_moves::generate_en_passant_moves(position);
+        assert_eq!(1, move_list.len());
+        assert_eq!(square::D5, move_list[0].source);
+        assert_eq!(square::C6, move_list[0].target);
+
+        // position 7
+
+        let position = Board::from_fen("rnbqkbnr/1p1ppppp/8/7P/pPp5/3P4/P1P1PPP1/RNBQKBNR b KQkq b3 0 5").unwrap().position;
+        let move_list = pawn_moves::generate_en_passant_moves(position);
+        assert_eq!(2, move_list.len());
+        assert_eq!(square::A4, move_list[0].source);
+        assert_eq!(square::B3, move_list[0].target);
+        assert_eq!(square::C4, move_list[1].source);
+        assert_eq!(square::B3, move_list[1].target);
+
+        // position 8
+
+        let position = Board::from_fen("rnbqkbnr/1p1pppp1/7p/7P/pPp5/3P4/P1P1PPP1/RNBQKBNR w KQkq - 0 6").unwrap().position;
+        let move_list = pawn_moves::generate_en_passant_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 9
+
+        let position = Board::from_fen("rnbqkbnr/ppppppp1/8/8/6Pp/2N2N2/PPPPPP1P/R1BQKB1R b KQkq g3 0 3").unwrap().position;
+        let move_list = pawn_moves::generate_en_passant_moves(position);
+        assert_eq!(1, move_list.len());
+        assert_eq!(square::H4, move_list[0].source);
+        assert_eq!(square::G3, move_list[0].target);
+
+        // position 10
+
+        let position = Board::from_fen("1nbqkbnr/rp1p1p2/7p/7P/pPp1pPp1/N2PR3/PBP1P1P1/R2QKBN1 b Qk f3 0 11").unwrap().position;
+        let move_list = pawn_moves::generate_en_passant_moves(position);
+        assert_eq!(1, move_list.len());
+        assert_eq!(square::G4, move_list[0].source);
+        assert_eq!(square::F3, move_list[0].target);
     }
 }
