@@ -113,8 +113,6 @@ mod tests {
         let position = Board::from_fen("r4rk1/6pp/pp2b3/3pPp2/4nP1q/1PNQ2bP/PB2B1PK/R4R2 w - - 11 22").unwrap().position;
         let move_list = pawn_moves::generate_quiet_pawn_moves(position);
         assert_eq!(0, move_list.len());
-        let position = Board::from_fen("r4rk1/6pp/pp2b3/3pPp2/4nP1q/1PNQ2bP/PB2B1PK/R4R2 b - - 11 22").unwrap().position;
-        assert_eq!(0, move_list.len());
 
         // position 3
 
