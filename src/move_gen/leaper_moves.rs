@@ -1,5 +1,5 @@
 use crate::board::castling_rights::CastlingRights;
-use crate::board::color::{Color, NUM_COLORS};
+use crate::board::color::{Color};
 use crate::board::file::File;
 use crate::board::piece::Piece;
 use crate::board::position::Position;
@@ -13,6 +13,7 @@ pub fn generate_leaper_moves(position: Position) -> Vec<Ply> {
     let mut move_list: Vec<Ply> = Vec::new();
     move_list.append(&mut generate_leaper_moves_by_piece(position, Piece::Knight));
     move_list.append(&mut generate_leaper_moves_by_piece(position, Piece::King));
+    move_list.append(&mut generate_castling_moves(position));
     move_list
 }
 
@@ -68,9 +69,6 @@ fn generate_leaper_moves_by_piece(position: Position, piece: Piece) -> Vec<Ply> 
 }
 
 fn generate_castling_moves(position: Position) -> Vec<Ply> {
-    // get a reference to the lookup table
-    let lookup = LOOKUP_TABLE.get().unwrap();
-
     let mut move_list: Vec<Ply> = Vec::new();
 
     let castling_rights = position.castling_rights[position.color_to_move as usize];
@@ -140,7 +138,74 @@ mod tests {
     use crate::board::piece::Piece;
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
-    use crate::move_gen::leaper_moves::{generate_castling_moves, generate_leaper_moves_by_piece};
+    use crate::move_gen::leaper_moves::{generate_castling_moves, generate_leaper_moves, generate_leaper_moves_by_piece};
+
+    #[test]
+    fn test_generate_leaper_moves() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1 (starting position)
+
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let move_list = generate_leaper_moves(position);
+        assert_eq!(4, move_list.len());
+
+        // position 2
+
+        let position = Board::from_fen("r1bqk2r/ppp1bppp/2nppn2/8/3PP3/2NB1N2/PPP2PPP/R1BQK2R w KQkq - 4 6").unwrap().position;
+        let move_list = generate_leaper_moves(position);
+        assert_eq!(14, move_list.len());
+
+        // position 3
+
+        let position = Board::from_fen("r1bqk2r/1p2bppp/p1nppn2/8/3PP3/P1NB1N2/1P3PPP/R1BQ1RK1 b kq - 0 9").unwrap().position;
+        let move_list = generate_leaper_moves(position);
+        assert_eq!(15, move_list.len());
+
+        // position 4
+
+        let position = Board::from_fen("rn2k2r/pppqbppp/4pn2/3p4/Q4Pb1/2P1PN2/PP1PB1PP/RNB2RK1 b kq - 2 7").unwrap().position;
+        let move_list = generate_leaper_moves(position);
+        assert_eq!(8, move_list.len());
+
+        // position 5
+
+        let position = Board::from_fen("4k2r/3b1ppp/3pp3/2p5/8/2P5/PP1n1PPP/R3K1NR w KQk - 0 14").unwrap().position;
+        let move_list = generate_leaper_moves(position);
+        assert_eq!(7, move_list.len());
+
+        // position 6
+
+        let position = Board::from_fen("rnbqk2N/2pp2pp/pp5n/4p3/1b2PP2/1PP5/P2P2PP/RNBQKB1R b KQq - 0 8").unwrap().position;
+        let move_list = generate_leaper_moves(position);
+        assert_eq!(7, move_list.len());
+
+        // position 7
+
+        let position = Board::from_fen("2rq1r1k/pb1nb1pp/1p6/4p3/2n1Pp2/1QBN1P2/P3B1PP/RN3RK1 b - - 1 20").unwrap().position;
+        let move_list = generate_leaper_moves(position);
+        assert_eq!(10, move_list.len());
+
+        // position 8
+
+        let position = Board::from_fen("rnbq1rk1/pppp1Npp/5n2/8/2B1P3/8/PPPP1bPP/RNBQK2R w KQ - 0 6").unwrap().position;
+        let move_list = generate_leaper_moves(position);
+        assert_eq!(3, move_list.len());
+
+        // position 9
+
+        let position = Board::from_fen("r2qk2r/ppp1bppp/2np1n2/4p3/2BPP3/2P2Q1P/PB3PP1/RN3RK1 b kq - 2 10").unwrap().position;
+        let move_list = generate_leaper_moves(position);
+        assert_eq!(13, move_list.len());
+
+        // position 10
+
+        let position = Board::from_fen("r1bqk2r/ppp2pbp/3p4/4n3/4P3/3P1N2/PPP3PP/RNBQK2R w KQkq - 0 9").unwrap().position;
+        let move_list = generate_leaper_moves(position);
+        assert_eq!(14, move_list.len());
+    }
 
     #[test]
     fn test_generate_leaper_moves_by_piece_for_knights() {

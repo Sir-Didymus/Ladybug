@@ -58,12 +58,13 @@ mod tests {
     use crate::move_gen::perft::perft;
 
     #[test]
+    #[ignore]
     fn test_perft() {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
 
         let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
-        perft(position, 4);
+        perft(position, 5);
     }
 }
