@@ -73,7 +73,74 @@ mod tests {
     use crate::board::piece::Piece;
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
-    use crate::move_gen::slider_moves::generate_slider_moves_by_piece;
+    use crate::move_gen::slider_moves::{generate_slider_moves, generate_slider_moves_by_piece};
+
+    #[test]
+    fn test_generate_slider_moves() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1 (starting position)
+
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let move_list = generate_slider_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 2
+
+        let position = Board::from_fen("rnbqkbnr/ppp2ppp/8/3p4/3P4/8/PPP2PPP/RNBQKBNR w KQkq - 0 4").unwrap().position;
+        let move_list = generate_slider_moves(position);
+        assert_eq!(16, move_list.len());
+
+        // position 3
+
+        let position = Board::from_fen("rn2k2r/2pq1ppp/p2bb3/1p1N2B1/2pP4/5N2/PP2BPPP/R2Q1RK1 b kq - 0 12").unwrap().position;
+        let move_list = generate_slider_moves(position);
+        assert_eq!(20, move_list.len());
+
+        // position 4
+
+        let position = Board::from_fen("r1kq4/p4Qp1/n1pp2p1/8/1P1N2b1/2P5/P4PPP/RN4K1 w - - 0 21").unwrap().position;
+        let move_list = generate_slider_moves(position);
+        assert_eq!(18, move_list.len());
+
+        // position 5
+
+        let position = Board::from_fen("r2qk2r/pp1nBpp1/7p/4p3/3pn3/3P1N2/PPP2PPP/R2QK2R b KQkq - 0 12").unwrap().position;
+        let move_list = generate_slider_moves(position);
+        assert_eq!(11, move_list.len());
+
+        // position 6
+
+        let position = Board::from_fen("r4rk1/p2n1pp1/1p5p/4p3/3p2n1/3P1N2/PPPBK1PP/R6R w - - 4 18").unwrap().position;
+        let move_list = generate_slider_moves(position);
+        assert_eq!(21, move_list.len());
+
+        // position 7
+
+        let position = Board::from_fen("3q2k1/1pp1br2/5n2/4pb2/8/2Pn2K1/1P4P1/r7 b - - 0 26").unwrap().position;
+        let move_list = generate_slider_moves(position);
+        assert_eq!(39, move_list.len());
+
+        // position 8
+
+        let position = Board::from_fen("r4rk1/ppp2qpn/3p1p1p/3B2b1/4P3/1Q2BP2/PPP3PP/3R1RK1 b - - 3 18").unwrap().position;
+        let move_list = generate_slider_moves(position);
+        assert_eq!(13, move_list.len());
+
+        // position 9
+
+        let position = Board::from_fen("3r2k1/1pp2r1n/3Q1ppp/p5b1/4P3/3KBP2/PPP3PP/3R1R2 w - - 0 24").unwrap().position;
+        let move_list = generate_slider_moves(position);
+        assert_eq!(23, move_list.len());
+
+        // position 10
+
+        let position = Board::from_fen("r4r1k/ppp1q1pn/3p1p1p/3Bn3/2N1PR2/P2PQ3/1PP3PP/5RK1 w - - 3 20").unwrap().position;
+        let move_list = generate_slider_moves(position);
+        assert_eq!(30, move_list.len());
+    }
 
     #[test]
     fn test_generate_slider_moves_by_piece_for_bishop() {
