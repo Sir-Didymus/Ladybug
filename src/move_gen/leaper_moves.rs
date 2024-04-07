@@ -1,7 +1,20 @@
+use crate::board::castling_rights::CastlingRights;
+use crate::board::color::{Color, NUM_COLORS};
+use crate::board::file::File;
 use crate::board::piece::Piece;
 use crate::board::position::Position;
+use crate::board::rank::Rank;
+use crate::board::square::Square;
 use crate::lookup::LOOKUP_TABLE;
 use crate::move_gen::ply::Ply;
+
+/// Generates all legal leaper moves for the given position, including castling moves.
+pub fn generate_leaper_moves(position: Position) -> Vec<Ply> {
+    let mut move_list: Vec<Ply> = Vec::new();
+    move_list.append(&mut generate_leaper_moves_by_piece(position, Piece::Knight));
+    move_list.append(&mut generate_leaper_moves_by_piece(position, Piece::King));
+    move_list
+}
 
 /// Generates all legal leaper moves (knights and kings) for a given leaper piece type in the given position.
 fn generate_leaper_moves_by_piece(position: Position, piece: Piece) -> Vec<Ply> {
@@ -54,13 +67,80 @@ fn generate_leaper_moves_by_piece(position: Position, piece: Piece) -> Vec<Ply> 
     legal_move_list
 }
 
+fn generate_castling_moves(position: Position) -> Vec<Ply> {
+    // get a reference to the lookup table
+    let lookup = LOOKUP_TABLE.get().unwrap();
+
+    let mut move_list: Vec<Ply> = Vec::new();
+
+    let castling_rights = position.castling_rights[position.color_to_move as usize];
+
+    // the color to move has no castling rights - return empty list
+    if castling_rights == CastlingRights::NoRights {
+        return move_list;
+    }
+
+    // the king is in check - return empty list
+    if position.is_in_check(position.color_to_move) {
+        return move_list;
+    }
+
+    // get castling rank
+    let rank = match position.color_to_move {
+        Color::White => Rank::First,
+        Color::Black => Rank::Eighth,
+    };
+
+    // get attack bb for opponent
+    let attack_bb = position.get_attack_bb(position.color_to_move.other());
+
+    // get occupancies
+    let occupancies = position.get_occupancies();
+
+    // queenside
+    if (castling_rights == CastlingRights::QueenSide || castling_rights == CastlingRights::Both) // color to move has castling rights for queenside
+        && !occupancies.get_bit(Square::from_file_rank(File::B, rank))  // B file square is unoccupied
+        && !occupancies.get_bit(Square::from_file_rank(File::C, rank)) // C file square is unoccupied
+        && !occupancies.get_bit(Square::from_file_rank(File::D, rank)) // D file square is unoccupied
+        && !attack_bb.get_bit(Square::from_file_rank(File::C, rank))  // C file square is not attacked
+        && !attack_bb.get_bit(Square::from_file_rank(File::D, rank)) // D file square is not attacked
+        && position.pieces[position.color_to_move.to_index() as usize][Piece::Rook.to_index() as usize].get_bit(Square::from_file_rank(File::A, rank)) // Rook is still on A file square
+    {
+        move_list.push(Ply {
+            source: Square::from_file_rank(File::E, rank),
+            target: Square::from_file_rank(File::C, rank),
+            piece: Piece::King,
+            captured_piece: None,
+            promotion_piece: None,
+        })
+    }
+
+    // kingside
+    if (castling_rights == CastlingRights::KingSide || castling_rights == CastlingRights::Both) // color to move has castling rights for kingside
+        && !occupancies.get_bit(Square::from_file_rank(File::F, rank))  // F file square is unoccupied
+        && !occupancies.get_bit(Square::from_file_rank(File::G, rank)) // G file square is unoccupied
+        && !attack_bb.get_bit(Square::from_file_rank(File::F, rank))  // F file square is not attacked
+        && !attack_bb.get_bit(Square::from_file_rank(File::G, rank)) // G file square is not attacked
+        && position.pieces[position.color_to_move.to_index() as usize][Piece::Rook.to_index() as usize].get_bit(Square::from_file_rank(File::H, rank)) // Rook is still on H file square
+    {
+        move_list.push(Ply {
+            source: Square::from_file_rank(File::E, rank),
+            target: Square::from_file_rank(File::G, rank),
+            piece: Piece::King,
+            captured_piece: None,
+            promotion_piece: None,
+        })
+    }
+    move_list
+}
+
 #[cfg(test)]
 mod tests {
     use crate::board::Board;
     use crate::board::piece::Piece;
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
-    use crate::move_gen::leaper_moves::generate_leaper_moves_by_piece;
+    use crate::move_gen::leaper_moves::{generate_castling_moves, generate_leaper_moves_by_piece};
 
     #[test]
     fn test_generate_leaper_moves_by_piece_for_knights() {
@@ -194,5 +274,72 @@ mod tests {
         let position = Board::from_fen("8/1Q6/p7/b1k3P1/5P2/8/7P/5K2 b - - 0 38").unwrap().position;
         let move_list = generate_leaper_moves_by_piece(position, Piece::King);
         assert_eq!(3, move_list.len());
+    }
+
+    #[test]
+    fn test_generate_castling_moves() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1 (starting position)
+
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let move_list = generate_castling_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 2
+
+        let position = Board::from_fen("r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B5/2NPPN2/PPP2PPP/R1BQK2R b KQkq - 0 5").unwrap().position;
+        let move_list = generate_castling_moves(position);
+        assert_eq!(1, move_list.len());
+
+        // position 3
+
+        let position = Board::from_fen("r1bq1rk1/pppp1pp1/2n2n2/2b1p2p/2B5/2NPPN2/PPPBQPPP/R3K2R w KQ - 0 8").unwrap().position;
+        let move_list = generate_castling_moves(position);
+        assert_eq!(2, move_list.len());
+
+        // position 4
+
+        let position = Board::from_fen("r1bq1rk1/pppp1pp1/2n2n2/4p3/P1B4p/bPNPPN2/2PBQPPP/R3K2R w KQ - 0 10").unwrap().position;
+        let move_list = generate_castling_moves(position);
+        assert_eq!(1, move_list.len());
+
+        // position 5
+
+        let position = Board::from_fen("r1bq1rk1/pppp1pp1/2n5/4p3/PPB4p/b1NPnN1P/2PBQPP1/R3K2R w KQ - 0 12").unwrap().position;
+        let move_list = generate_castling_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 6
+
+        let position = Board::from_fen("r1bq1rk1/p1pp1p2/1pn3p1/4p3/PPB4p/R1NPP2P/2PBQ1P1/4K1NR b K - 0 14").unwrap().position;
+        let move_list = generate_castling_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 7
+
+        let position = Board::from_fen("r1b2rk1/p1pp1p2/1pn3p1/8/PPBNpq1p/R1NPP2P/2PBQ1P1/4K2R w K - 4 17").unwrap().position;
+        let move_list = generate_castling_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 8
+
+        let position = Board::from_fen("r1b2rk1/p1pp1p2/1pn3p1/P7/1PBNp2p/R1NPP2q/2PB1QP1/4K2R w K - 0 19").unwrap().position;
+        let move_list = generate_castling_moves(position);
+        assert_eq!(1, move_list.len());
+
+        // position 9
+
+        let position = Board::from_fen("r3k1nr/pQp1qppp/2np4/b7/2B1P1b1/P1N2N2/5PPP/R1B2RK1 b kq - 0 11").unwrap().position;
+        let move_list = generate_castling_moves(position);
+        assert_eq!(0, move_list.len());
+
+        // position 10
+
+        let position = Board::from_fen("r3k2r/Q1p1qppp/2np1n2/b7/2B1P1b1/P1N2N2/5PPP/R1B2RK1 b kq - 0 12").unwrap().position;
+        let move_list = generate_castling_moves(position);
+        assert_eq!(2, move_list.len());
     }
 }
