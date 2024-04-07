@@ -9,6 +9,7 @@ pub mod ply;
 pub mod perft;
 mod pawn_moves;
 mod slider_moves;
+mod leaper_moves;
 
 pub fn generates_moves(position: Position) -> Vec<Ply> {
     let mut move_list: Vec<Ply> = Vec::new();
