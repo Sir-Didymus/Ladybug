@@ -128,4 +128,71 @@ mod tests {
         let move_list = generate_leaper_moves_by_piece(position, Piece::Knight);
         assert_eq!(0, move_list.len());
     }
+
+    #[test]
+    fn test_generate_leaper_moves_by_piece_for_kings() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1 (starting position)
+
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let move_list = generate_leaper_moves_by_piece(position, Piece::King);
+        assert_eq!(0, move_list.len());
+
+        // position 2
+
+        let position = Board::from_fen("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2").unwrap().position;
+        let move_list = generate_leaper_moves_by_piece(position, Piece::King);
+        assert_eq!(1, move_list.len());
+
+        // position 3
+
+        let position = Board::from_fen("rnbq1bnr/ppppkppp/8/4p3/4P3/8/PPPPKPPP/RNBQ1BNR w - - 2 3").unwrap().position;
+        let move_list = generate_leaper_moves_by_piece(position, Piece::King);
+        assert_eq!(4, move_list.len());
+
+        // position 4
+
+        let position = Board::from_fen("rnbq1bnr/ppppkp1p/6p1/4p1B1/3PP3/8/PPP1KPPP/RN1Q1BNR b - - 1 4").unwrap().position;
+        let move_list = generate_leaper_moves_by_piece(position, Piece::King);
+        assert_eq!(3, move_list.len());
+
+        // position 5
+
+        let position = Board::from_fen("rnbq1bnr/ppppk2p/5Bp1/4p3/3PP3/8/PPP1KPPP/RN1Q1BNR b - - 0 5").unwrap().position;
+        let move_list = generate_leaper_moves_by_piece(position, Piece::King);
+        assert_eq!(5, move_list.len());
+
+        // position 6
+
+        let position = Board::from_fen("7k/7P/7K/8/8/8/8/8 b - - 0 1").unwrap().position;
+        let move_list = generate_leaper_moves_by_piece(position, Piece::King);
+        assert_eq!(0, move_list.len());
+
+        // position 7
+
+        let position = Board::from_fen("7k/7P/7K/8/8/8/8/8 w - - 0 1").unwrap().position;
+        let move_list = generate_leaper_moves_by_piece(position, Piece::King);
+        assert_eq!(3, move_list.len());
+
+        // position 8
+
+        let position = Board::from_fen("8/p7/1ppR3k/6r1/8/8/PB2KPbP/8 b - - 0 31").unwrap().position;
+        let move_list = generate_leaper_moves_by_piece(position, Piece::King);
+        assert_eq!(2, move_list.len());
+
+        // position 9
+
+        let position = Board::from_fen("rn3r2/pb4R1/1ppp2kN/3n1p2/8/B2B4/P4PPP/3R2K1 b - - 1 22").unwrap().position;
+        let move_list = generate_leaper_moves_by_piece(position, Piece::King);
+        assert_eq!(4, move_list.len());
+
+        // position 10
+
+        let position = Board::from_fen("8/1Q6/p7/b1k3P1/5P2/8/7P/5K2 b - - 0 38").unwrap().position;
+        let move_list = generate_leaper_moves_by_piece(position, Piece::King);
+        assert_eq!(3, move_list.len());
+    }
 }
