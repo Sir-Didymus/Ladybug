@@ -47,7 +47,7 @@ fn generate_slider_moves_by_piece(position: Position, piece: Piece) -> Vec<Ply> 
         // loop over target squares and add ply
         for target_square in target_squares {
             // get the type of the attacked piece
-            let attacked_piece = position.get_piece(target_square).map(|(piece, color)| piece);
+            let attacked_piece = position.get_piece(target_square).map(|(piece, _color)| piece);
             move_list.push(Ply {
                 source: source_square,
                 target: target_square,
@@ -140,5 +140,72 @@ mod tests {
         let position = Board::from_fen("rn2kbnr/ppp1pppp/8/1b1p4/3PP3/5P1N/PPPKB1qP/RNBQ3R w kq - 3 7").unwrap().position;
         let move_list = generate_slider_moves_by_piece(position, Piece::Bishop);
         assert_eq!(0, move_list.len());
+    }
+
+    #[test]
+    fn test_generate_slider_moves_by_piece_for_rook() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1 (starting position)
+
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let move_list = generate_slider_moves_by_piece(position, Piece::Rook);
+        assert_eq!(0, move_list.len());
+
+        // position 2
+
+        let position = Board::from_fen("rnbqkbnr/1p1pp3/2p2ppp/p6P/4P3/P6R/1PPP1PP1/RNBQKBN1 w Qkq - 0 6").unwrap().position;
+        let move_list = generate_slider_moves_by_piece(position, Piece::Rook);
+        assert_eq!(10, move_list.len());
+
+        // position 3
+
+        let position = Board::from_fen("3rr1k1/ppp2p1p/3p2p1/3P2P1/5P2/4Q3/P1B3P1/5RK1 b - - 0 33").unwrap().position;
+        let move_list = generate_slider_moves_by_piece(position, Piece::Rook);
+        assert_eq!(10, move_list.len());
+
+        // position 4
+
+        let position = Board::from_fen("5rk1/4bppp/4p3/4Bb2/2rPn3/1Q3N1P/5PP1/2R2RK1 b - - 0 27").unwrap().position;
+        let move_list = generate_slider_moves_by_piece(position, Piece::Rook);
+        assert_eq!(15, move_list.len());
+
+        // position 5
+
+        let position = Board::from_fen("r4b1r/4nkpp/pq6/1p1n4/4NB2/5P2/PP4PP/2RQR1K1 w - - 4 21").unwrap().position;
+        let move_list = generate_slider_moves_by_piece(position, Piece::Rook);
+        assert_eq!(2, move_list.len());
+
+        // position 6
+
+        let position = Board::from_fen("r4b1r/4nkpp/p7/1p1n4/4N3/4qP2/PP4PP/2RQR1K1 w - - 0 22").unwrap().position;
+        let move_list = generate_slider_moves_by_piece(position, Piece::Rook);
+        assert_eq!(1, move_list.len());
+
+        // position 7
+
+        let position = Board::from_fen("rnb1kbnr/ppp5/3p1ppp/4p3/P2P4/3KR2q/1PP1PPP1/RNBQ1BN1 w kq - 0 8").unwrap().position;
+        let move_list = generate_slider_moves_by_piece(position, Piece::Rook);
+        assert_eq!(5, move_list.len());
+
+        // position 8
+
+        let position = Board::from_fen("8/2pr4/5k2/7p/1P6/4RPPP/r2pK3/3R4 b - - 5 45").unwrap().position;
+        let move_list = generate_slider_moves_by_piece(position, Piece::Rook);
+        assert_eq!(18, move_list.len());
+
+        // position 9
+
+        let position = Board::from_fen("6k1/3R3R/R7/4R3/2R5/5R2/6K1/1R5R w - - 0 1").unwrap().position;
+        let move_list = generate_slider_moves_by_piece(position, Piece::Rook);
+        assert_eq!(101, move_list.len());
+
+        // position 10
+
+        let position = Board::from_fen("4R2b/8/5R2/r1R1K3/3R1R2/2b5/5r1b/7k w - - 0 1").unwrap().position;
+        let move_list = generate_slider_moves_by_piece(position, Piece::Rook);
+        assert_eq!(12, move_list.len());
     }
 }
