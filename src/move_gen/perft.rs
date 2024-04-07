@@ -1,5 +1,5 @@
 use crate::board::position::Position;
-use crate::move_gen::pawn_moves::generate_pawn_moves;
+use crate::move_gen::generates_moves;
 use crate::move_gen::ply::Ply;
 
 /// This function performs a [Perft](https://www.chessprogramming.org/Perft) (Performance Test).
@@ -14,7 +14,7 @@ pub fn perft(position: Position, depth: u64) -> u64 {
     let mut node_count: u64 = 0;
 
     // generate all legal moves for the position
-    let move_list: Vec<Ply> = generate_pawn_moves(position);
+    let move_list: Vec<Ply> = generates_moves(position);
 
     // call the perft_driver function for all legal moves and add the results to node_count
     for ply in move_list {
@@ -40,7 +40,7 @@ fn perft_driver(position: Position, depth: u64) -> u64 {
     let mut node_count: u64 = 0;
 
     // generate all legal moves for the position
-    let move_list: Vec<Ply> = generate_pawn_moves(position);
+    let move_list: Vec<Ply> = generates_moves(position);
 
     // call the perft_driver function recursively for all legal moves and add the results to node_count
     for ply in move_list {
