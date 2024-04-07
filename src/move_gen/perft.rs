@@ -339,4 +339,273 @@ mod tests {
         let position = Board::from_fen("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10").unwrap().position;
         assert_eq!(164_075_551, perft(position, 5));
     }
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    // Position 7 - promotion
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    #[test]
+    // position 7 depth 1
+    fn perft_position7_depth1() {
+        initialize_lookup_table();
+        let position = Board::from_fen("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1").unwrap().position;
+        assert_eq!(24, perft(position, 1));
+    }
+
+    #[test]
+    // position 7 depth 2
+    fn perft_position7_depth2() {
+        initialize_lookup_table();
+        let position = Board::from_fen("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1").unwrap().position;
+        assert_eq!(496, perft(position, 2));
+    }
+
+    #[test]
+    // position 7 depth 3
+    fn perft_position7_depth3() {
+        initialize_lookup_table();
+        let position = Board::from_fen("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1").unwrap().position;
+        assert_eq!(9_483, perft(position, 3));
+    }
+
+    #[test]
+    #[ignore]
+    // position 7 depth 4
+    fn perft_position7_depth4() {
+        initialize_lookup_table();
+        let position = Board::from_fen("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1").unwrap().position;
+        assert_eq!(182_838, perft(position, 4));
+    }
+
+    #[test]
+    #[ignore]
+    // position 7 depth 5
+    fn perft_position7_depth5() {
+        initialize_lookup_table();
+        let position = Board::from_fen("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1").unwrap().position;
+        assert_eq!(3_605_103, perft(position, 5));
+    }
+
+    #[test]
+    #[ignore]
+    // position 7 depth 6
+    fn perft_position7_depth6() {
+        initialize_lookup_table();
+        let position = Board::from_fen("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1").unwrap().position;
+        assert_eq!(71_179_139, perft(position, 6));
+    }
+
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    // Position 8 - avoid illegal en passant capture - white (https://www.talkchess.com/forum3/viewtopic.php?f=7&t=47318)
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    #[test]
+    // position 8 depth 1
+    fn perft_position8_depth1() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(8, perft(position, 1));
+    }
+
+    #[test]
+    // position 8 depth 2
+    fn perft_position8_depth2() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(104, perft(position, 2));
+    }
+
+    #[test]
+    // position 8 depth 3
+    fn perft_position8_depth3() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(736, perft(position, 3));
+    }
+
+    #[test]
+    // position 8 depth 4
+    fn perft_position8_depth4() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(9_287, perft(position, 4));
+    }
+
+    #[test]
+    #[ignore]
+    // position 8 depth 5
+    fn perft_position8_depth5() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(62_297, perft(position, 5));
+    }
+
+    #[test]
+    #[ignore]
+    // position 8 depth 6
+    fn perft_position8_depth6() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(824_064, perft(position, 6));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    // Position 9 - avoid illegal en passant capture - black (https://www.talkchess.com/forum3/viewtopic.php?f=7&t=47318)
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    #[test]
+    // position 9 depth 1
+    fn perft_position9_depth1() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1").unwrap().position;
+        assert_eq!(8, perft(position, 1));
+    }
+
+    #[test]
+    // position 9 depth 2
+    fn perft_position9_depth2() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1").unwrap().position;
+        assert_eq!(104, perft(position, 2));
+    }
+
+    #[test]
+    // position 9 depth 3
+    fn perft_position9_depth3() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1").unwrap().position;
+        assert_eq!(736, perft(position, 3));
+    }
+
+    #[test]
+    // position 9 depth 4
+    fn perft_position9_depth4() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1").unwrap().position;
+        assert_eq!(9_287, perft(position, 4));
+    }
+
+    #[test]
+    #[ignore]
+    // position 9 depth 5
+    fn perft_position9_depth5() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1").unwrap().position;
+        assert_eq!(62_297, perft(position, 5));
+    }
+
+    #[test]
+    #[ignore]
+    // position 9 depth 6
+    fn perft_position9_depth6() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1").unwrap().position;
+        assert_eq!(824_064, perft(position, 6));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    // Position 10 - en passant capture checks opponent - white (https://www.talkchess.com/forum3/viewtopic.php?f=7&t=47318)
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    #[test]
+    // position 10 depth 1
+    fn perft_position10_depth1() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5k2/8/2Pp4/2B5/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(15, perft(position, 1));
+    }
+
+    #[test]
+    // position 10 depth 2
+    fn perft_position10_depth2() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5k2/8/2Pp4/2B5/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(126, perft(position, 2));
+    }
+
+    #[test]
+    // position 10 depth 3
+    fn perft_position10_depth3() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5k2/8/2Pp4/2B5/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(1_928, perft(position, 3));
+    }
+
+    #[test]
+    #[ignore]
+    // position 10 depth 4
+    fn perft_position10_depth4() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5k2/8/2Pp4/2B5/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(13_931, perft(position, 4));
+    }
+
+    #[test]
+    #[ignore]
+    // position 10 depth 5
+    fn perft_position10_depth5() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5k2/8/2Pp4/2B5/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(20_6379, perft(position, 5));
+    }
+
+    #[test]
+    #[ignore]
+    // position 10 depth 6
+    fn perft_position10_depth6() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/5k2/8/2Pp4/2B5/1K6/8/8 w - d6 0 1").unwrap().position;
+        assert_eq!(1_440_467, perft(position, 6));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    // Position 11 - en passant capture checks opponent - black (https://www.talkchess.com/forum3/viewtopic.php?f=7&t=47318)
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    #[test]
+    // position 11 depth 1
+    fn perft_position11_depth1() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1").unwrap().position;
+        assert_eq!(15, perft(position, 1));
+    }
+
+    #[test]
+    // position 11 depth 2
+    fn perft_position11_depth2() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1").unwrap().position;
+        assert_eq!(126, perft(position, 2));
+    }
+
+    #[test]
+    // position 11 depth 3
+    fn perft_position11_depth3() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1").unwrap().position;
+        assert_eq!(1_928, perft(position, 3));
+    }
+
+    #[test]
+    #[ignore]
+    // position 11 depth 4
+    fn perft_position11_depth4() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1").unwrap().position;
+        assert_eq!(13_931, perft(position, 4));
+    }
+
+    #[test]
+    #[ignore]
+    // position 11 depth 5
+    fn perft_position11_depth5() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1").unwrap().position;
+        assert_eq!(20_6379, perft(position, 5));
+    }
+
+    #[test]
+    #[ignore]
+    // position 11 depth 6
+    fn perft_position11_depth6() {
+        initialize_lookup_table();
+        let position = Board::from_fen("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1").unwrap().position;
+        assert_eq!(1_440_467, perft(position, 6));
+    }
 }
