@@ -1,3 +1,11 @@
+<div align="center">
+<img src="ladybug.png" width="200" alt="ladybug.pn">
+<h3>Ladybug</h3>
+
+A free and <s>strong</s> weak UCI chess engine.
+</div>
+
+
 This is my attempt at writing a chess engine in Rust. 
 Before starting this project, I knew next to nothing about neither chess engines nor Rust.
 
