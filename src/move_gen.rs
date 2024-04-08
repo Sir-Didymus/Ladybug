@@ -12,6 +12,7 @@ mod pawn_moves;
 mod slider_moves;
 mod leaper_moves;
 
+/// Generates all legal moves for the given position.
 pub fn generates_moves(position: Position) -> Vec<Ply> {
     let mut move_list: Vec<Ply> = Vec::new();
     move_list.append(&mut generate_pawn_moves(position));
