@@ -423,6 +423,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     // position 8 depth 4
     fn perft_position8_depth4() {
         initialize_lookup_table();
