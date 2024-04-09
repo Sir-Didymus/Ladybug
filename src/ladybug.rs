@@ -71,3 +71,41 @@ impl Ladybug {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use std::sync::mpsc;
+    use std::sync::mpsc::{Receiver, Sender};
+    use std::thread;
+    use crate::ladybug::Ladybug;
+
+    /// Creates a new Ladybug thread and returns the input_sender and output_receiver.
+    fn setup() -> (Sender<String>, Receiver<String>) {
+        // create input_sender and input_receiver so that the input thread can send input to the ladybug thread
+        let (input_sender, input_receiver) : (Sender<String>, Receiver<String>) = mpsc::channel();
+
+        // create output_sender and output_receiver so that the ladybug thread can send output to the output thread.
+        let (output_sender, output_receiver) : (Sender<String>, Receiver<String>) = mpsc::channel();
+
+        let ladybug = Ladybug::default();
+
+        // spawn the Ladybug thread
+        thread::spawn(move || ladybug.run(output_sender, input_receiver));
+
+        (input_sender, output_receiver)
+    }
+
+    #[test]
+    fn test_ladybug_invalid_uci_input_prints_error_message() {
+        let (input_sender, output_receiver) = setup();
+        
+        let _ = input_sender.send(String::from("Not Uci"));
+        assert_eq!("info string unknown command", output_receiver.recv().unwrap());
+
+        let _ = input_sender.send(String::from("       "));
+        assert_eq!("info string unknown command", output_receiver.recv().unwrap());
+
+        let _ = input_sender.send(String::from("123456789"));
+        assert_eq!("info string unknown command", output_receiver.recv().unwrap());
+    }
+}
+

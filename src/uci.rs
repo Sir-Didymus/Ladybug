@@ -1,4 +1,5 @@
 /// Represents a UCI command.
+#[derive(PartialEq, Debug)]
 pub enum UciCommand {
     Uci,
 }
@@ -17,5 +18,17 @@ pub fn parse_uci(input: String) -> Result<UciCommand, String> {
     match uci_parts[0].as_str() {
         "uci" => Ok(UciCommand::Uci),
         _other => Err(String::from("info string unknown command")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::uci;
+
+    #[test]
+    fn parse_uci_with_invalid_input_returns_error() {
+        assert_eq!(Err(String::from("info string unknown command")), uci::parse_uci(String::from("Not Uci")));
+        assert_eq!(Err(String::from("info string unknown command")), uci::parse_uci(String::from("       ")));
+        assert_eq!(Err(String::from("info string unknown command")), uci::parse_uci(String::from("123456789")));
     }
 }
