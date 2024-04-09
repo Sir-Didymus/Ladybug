@@ -5,6 +5,7 @@ use ladybug::ladybug::Ladybug;
 use ladybug::lookup::LOOKUP_TABLE;
 use ladybug::lookup::lookup_table::LookupTable;
 
+/// Initializes the lookup table, spawns the input and output threads, and starts running Ladybug.
 fn main() {
     println!("\nLadybug 0.1.0\n");
 
@@ -33,7 +34,7 @@ fn main() {
 
     let ladybug = Ladybug::default();
     
-    ladybug.run(input_receiver);
+    ladybug.run(output_sender, input_receiver);
 }
 
 /// Reads input from Stdin and sends it to Ladybug.

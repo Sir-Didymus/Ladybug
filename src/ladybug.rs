@@ -1,5 +1,6 @@
-use std::sync::mpsc::Receiver;
-use crate::uci::{parse_uci, UciCommand};
+use std::sync::mpsc::{Receiver, Sender};
+use crate::uci;
+use crate::uci::{UciCommand};
 
 /// The main character in this project!
 /// The Ladybug struct acts as the UCI client and can receive and handle UCI commands.
@@ -19,24 +20,54 @@ impl Default for Ladybug {
 }
 
 impl Ladybug {
-    /// Start running Ladybug.
-    pub fn run(&self, receiver: Receiver<String>) {
+    /// Starts running Ladybug.
+    pub fn run(&self, output_sender: Sender<String>, input_sender: Receiver<String>) {
         loop {
-            let mut input = String::new();
+            // blocks until Ladybug receives input
+            let input = input_sender.recv();
             
-            input = receiver.recv().unwrap();
+            // if the input thread closes the connection, Ladybug must not continue running
+            if input.is_err() {
+                panic!("The input thread has unexpectedly closed the channel connection.")
+            }
             
-            let uci_command = parse_uci(input).unwrap();
+            // get the input string from the result
+            let input = input.unwrap();
             
+            // try to parse the uci command
+            let uci_command = uci::parse_uci(input);
+            
+            let uci_command = match uci_command {
+                // if the uci command cannot be parsed, send the error message to the output thread
+                Err(message) => {
+                    Self::send_output(&output_sender, message);
+                    continue;
+                }
+                Ok(command) => command
+            };
+            
+            // delegate the handling of the uci command to the respective method
             match uci_command {
-                UciCommand::Uci => self.handle_uci(),
+                UciCommand::Uci => self.handle_uci(&output_sender),
             }
         }
     }
     
-    fn handle_uci(&self) {
-        println!("id name {}", self.name);
-        println!("id author {}", self.author);
+    /// Sends the given String to the output thread.
+    fn send_output(output_sender: &Sender<String>, output: String) {
+        let send_result = output_sender.send(output);
+        
+        // if the output thread closes the connection, Ladybug must not continue running
+        if send_result.is_err() {
+            panic!("The output thread has unexpectedly closed the channel connection.")
+        }
+    }
+    
+    /// Handles the "uci" command
+    fn handle_uci(&self, output_sender: &Sender<String>) {
+        Self::send_output(output_sender, format!("id name {}", self.name));
+        Self::send_output(output_sender, format!("id author {}", self.author));
+        Self::send_output(output_sender, String::from("uciok"));
     }
 }
 
