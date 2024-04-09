@@ -53,9 +53,19 @@ impl Board {
     }
 
     /// Takes a FEN and splits it into its 6 parts.
+    /// If the FEN has more than 4 but less than 6 parts, default parameters will be added for the remaining parts.
     fn split_fen(fen: &str) -> Result<Vec<String>, String> {
-        let fen_parts: Vec<String> = fen.split_whitespace().map(|s| s.to_string()).collect();
+        let mut fen_parts: Vec<String> = fen.split_whitespace().map(|s| s.to_string()).collect();
         match fen_parts.len() {
+            4 => {
+                fen_parts.push(String::from("0"));
+                fen_parts.push(String::from("1"));
+                Ok(fen_parts)
+            }
+            5 => {
+                fen_parts.push(String::from("1"));
+                Ok(fen_parts)
+            }
             6 => Ok(fen_parts),
             _other => Err(String::from("Invalid FEN")),
         }
@@ -189,7 +199,7 @@ mod tests {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
-        
+
         // -----------------------------------------------------------------------------------------
         // Test the parse_fen function with a lot of different positions to make sure it's working.
         // -----------------------------------------------------------------------------------------
@@ -267,7 +277,6 @@ mod tests {
     fn parse_fen_with_invalid_fen_returns_error() {
         assert_eq!(Err(String::from("Invalid FEN")), Board::parse_fen(""));
         assert_eq!(Err(String::from("Invalid FEN")), Board::parse_fen("Rust is awesome!"));
-        assert_eq!(Err(String::from("Invalid FEN")), Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1"));
         assert_eq!(Err(String::from("Invalid FEN")), Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQKQ - 0 1"));
         assert_eq!(Err(String::from("Invalid FEN")), Board::parse_fen("rnbqkbnr/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 1"));
         assert_eq!(Err(String::from("Invalid FEN")), Board::parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR B KQkq - 0 1"));
@@ -277,6 +286,7 @@ mod tests {
 
     #[test]
     fn split_fen_with_valid_fen_returns_vec_with_6_strings() {
+        // starting position
         let fen_parts = Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2").unwrap();
         assert_eq!(6, fen_parts.len());
         assert_eq!("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R", fen_parts[0]);
@@ -285,13 +295,32 @@ mod tests {
         assert_eq!("-", fen_parts[3]);
         assert_eq!("1", fen_parts[4]);
         assert_eq!("2", fen_parts[5]);
+
+        // starting position with missing full move counter
+        let fen_parts =  Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1").unwrap();
+        assert_eq!(6, fen_parts.len());
+        assert_eq!("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R", fen_parts[0]);
+        assert_eq!("b", fen_parts[1]);
+        assert_eq!("KQkq", fen_parts[2]);
+        assert_eq!("-", fen_parts[3]);
+        assert_eq!("1", fen_parts[4]);
+        assert_eq!("1", fen_parts[5]);
+
+        // starting position with missing halfmove clock and full move counter
+        let fen_parts =  Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -").unwrap();
+        assert_eq!(6, fen_parts.len());
+        assert_eq!("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R", fen_parts[0]);
+        assert_eq!("b", fen_parts[1]);
+        assert_eq!("KQkq", fen_parts[2]);
+        assert_eq!("-", fen_parts[3]);
+        assert_eq!("0", fen_parts[4]);
+        assert_eq!("1", fen_parts[5]);
     }
 
     #[test]
     fn split_fen_with_invalid_fen_returns_error() {
-        assert_eq!(Err(String::from("Invalid FEN")), Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1"));
-        assert_eq!(Err(String::from("Invalid FEN")), Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1       "));
-        assert_eq!(Err(String::from("Invalid FEN")), Board::split_fen(" b KQkq - 1       "));
+        assert_eq!(Err(String::from("Invalid FEN")), Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq"));
+        assert_eq!(Err(String::from("Invalid FEN")), Board::split_fen("one two three four five six seven"));
         assert_ne!(Err(String::from("Invalid FEN")), Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2"));
     }
 
