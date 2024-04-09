@@ -24,11 +24,17 @@ pub fn parse_uci(input: String) -> Result<UciCommand, String> {
 #[cfg(test)]
 mod tests {
     use crate::uci;
+    use crate::uci::UciCommand;
 
     #[test]
     fn parse_uci_with_invalid_input_returns_error() {
         assert_eq!(Err(String::from("info string unknown command")), uci::parse_uci(String::from("Not Uci")));
         assert_eq!(Err(String::from("info string unknown command")), uci::parse_uci(String::from("       ")));
         assert_eq!(Err(String::from("info string unknown command")), uci::parse_uci(String::from("123456789")));
+    }
+
+    #[test]
+    fn test_parse_uci_for_uci() {
+        assert_eq!(UciCommand::Uci, uci::parse_uci(String::from("uci")).unwrap());
     }
 }

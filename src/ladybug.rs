@@ -107,5 +107,16 @@ mod tests {
         let _ = input_sender.send(String::from("123456789"));
         assert_eq!("info string unknown command", output_receiver.recv().unwrap());
     }
+
+    #[test]
+    fn test_ladybug_for_uci() {
+        let (input_sender, output_receiver) = setup();
+
+        let _ = input_sender.send(String::from("uci"));
+        
+        assert_eq!("id name Ladybug 0.1.0", output_receiver.recv().unwrap());
+        assert_eq!("id author Felix O.", output_receiver.recv().unwrap());
+        assert_eq!("uciok", output_receiver.recv().unwrap());
+    }
 }
 
