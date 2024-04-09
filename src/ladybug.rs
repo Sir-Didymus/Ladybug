@@ -50,6 +50,10 @@ impl Ladybug {
             match uci_command {
                 UciCommand::Uci => self.handle_uci(&output_sender),
                 UciCommand::IsReady => self.handle_is_ready(&output_sender),
+                UciCommand::Quit => {
+                    self.handle_quit(&output_sender);
+                    break;
+                },
                 UciCommand::Help => self.handle_help(&output_sender),
             }
         }
@@ -77,12 +81,18 @@ impl Ladybug {
         Self::send_output(output_sender, String::from("readyok"));
     }
 
+    /// Handles the "quit" command.
+    fn handle_quit(&self, output_sender: &Sender<String>) {
+        Self::send_output(output_sender, String::from("quit"));
+    }
+
     /// Handles the "help" command.
     fn handle_help(&self, output_sender: &Sender<String>) {
         Self::send_output(output_sender, String::from("Ladybug is a free and UCI compatible chess engine."));
         Self::send_output(output_sender, String::from("Currently, Ladybug only implements a subset of the UCI protocol:"));
         Self::send_output(output_sender, String::from("uci                              : Ask Ladybug if she supports UCI"));
-        Self::send_output(output_sender, String::from("isready                          : Synchronise Ladybug with the GUI"));
+        Self::send_output(output_sender, String::from("isready                          : Synchronize Ladybug with the GUI"));
+        Self::send_output(output_sender, String::from("quit                             : Quit Ladybug"));
     }
 }
 
@@ -142,6 +152,14 @@ mod tests {
     }
 
     #[test]
+    fn test_ladybug_for_quit() {
+        let (input_sender, output_receiver) = setup();
+
+        let _ = input_sender.send(String::from("quit"));
+        assert_eq!("quit", output_receiver.recv().unwrap());
+    }
+
+    #[test]
     fn test_ladybug_for_help() {
         let (input_sender, output_receiver) = setup();
 
@@ -149,7 +167,8 @@ mod tests {
         assert_eq!("Ladybug is a free and UCI compatible chess engine.", output_receiver.recv().unwrap());
         assert_eq!("Currently, Ladybug only implements a subset of the UCI protocol:", output_receiver.recv().unwrap());
         assert_eq!("uci                              : Ask Ladybug if she supports UCI", output_receiver.recv().unwrap());
-        assert_eq!("isready                          : Synchronise Ladybug with the GUI", output_receiver.recv().unwrap());
+        assert_eq!("isready                          : Synchronize Ladybug with the GUI", output_receiver.recv().unwrap());
+        assert_eq!("quit                             : Quit Ladybug", output_receiver.recv().unwrap());
     }
 }
 

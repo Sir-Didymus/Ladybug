@@ -32,8 +32,10 @@ fn main() {
     // spawn the output thread
     thread::spawn(move || write_output(output_receiver));
 
+    // initialize Ladybug
     let ladybug = Ladybug::default();
     
+    // start running Ladybug
     ladybug.run(output_sender, input_receiver);
 }
 
@@ -42,15 +44,28 @@ pub fn read_input(sender: Sender<String>) {
     loop {
         let mut input = String::new();
         io::stdin().read_line(&mut input).expect("Failed to read line");
-        sender.send(input).unwrap()
+
+        // try to send the input to Ladybug
+        let result = sender.send(input);
+        
+        if result.is_err() {
+            // the Ladybug thread was terminated, terminate the input thread
+            return;
+        }
     }
 }
 
 /// Receives output from Ladybug and writes it to Stdout.
 pub fn write_output(receiver: Receiver<String>) {
     loop {
-        let mut output = String::new();
-        output = receiver.recv().unwrap();
+        let output = receiver.recv().unwrap();
+        
+        // if the output thread receives "quit", terminate it
+        if output == "quit" {
+            return;
+        }
+
+        // print Ladybug's output
         println!("{}", output);
     }
 }
