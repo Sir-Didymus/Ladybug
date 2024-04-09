@@ -2,7 +2,8 @@
 #[derive(PartialEq, Debug)]
 pub enum UciCommand {
     Uci,
-    IsReady
+    IsReady,
+    Help
 }
 
 /// Tries to parse a string as a UCI command.
@@ -19,6 +20,7 @@ pub fn parse_uci(input: String) -> Result<UciCommand, String> {
     match uci_parts[0].as_str() {
         "uci" => Ok(UciCommand::Uci),
         "isready" => Ok(UciCommand::IsReady),
+        "help" => Ok(UciCommand::Help),
         _other => Err(String::from("info string unknown command")),
     }
 }
@@ -43,5 +45,10 @@ mod tests {
     #[test]
     fn test_parse_uci_for_isready() {
         assert_eq!(UciCommand::IsReady, uci::parse_uci(String::from("isready")).unwrap());
+    }
+
+    #[test]
+    fn test_parse_uci_for_help() {
+        assert_eq!(UciCommand::Help, uci::parse_uci(String::from("help")).unwrap());
     }
 }

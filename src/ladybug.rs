@@ -49,7 +49,8 @@ impl Ladybug {
             // delegate the handling of the uci command to the respective method
             match uci_command {
                 UciCommand::Uci => self.handle_uci(&output_sender),
-                UciCommand::IsReady => self.handle_is_ready(&output_sender)
+                UciCommand::IsReady => self.handle_is_ready(&output_sender),
+                UciCommand::Help => self.handle_help(&output_sender),
             }
         }
     }
@@ -74,6 +75,14 @@ impl Ladybug {
     /// Handles the "isready" command.
     fn handle_is_ready(&self, output_sender: &Sender<String>) {
         Self::send_output(output_sender, String::from("readyok"));
+    }
+
+    /// Handles the "help" command.
+    fn handle_help(&self, output_sender: &Sender<String>) {
+        Self::send_output(output_sender, String::from("Ladybug is a free and UCI compatible chess engine."));
+        Self::send_output(output_sender, String::from("Currently, Ladybug only implements a subset of the UCI protocol:"));
+        Self::send_output(output_sender, String::from("uci                              : Ask Ladybug if she supports UCI"));
+        Self::send_output(output_sender, String::from("isready                          : Synchronise Ladybug with the GUI"));
     }
 }
 
@@ -130,6 +139,17 @@ mod tests {
         
         let _ = input_sender.send(String::from("isready"));
         assert_eq!("readyok", output_receiver.recv().unwrap());
+    }
+
+    #[test]
+    fn test_ladybug_for_help() {
+        let (input_sender, output_receiver) = setup();
+
+        let _ = input_sender.send(String::from("help"));
+        assert_eq!("Ladybug is a free and UCI compatible chess engine.", output_receiver.recv().unwrap());
+        assert_eq!("Currently, Ladybug only implements a subset of the UCI protocol:", output_receiver.recv().unwrap());
+        assert_eq!("uci                              : Ask Ladybug if she supports UCI", output_receiver.recv().unwrap());
+        assert_eq!("isready                          : Synchronise Ladybug with the GUI", output_receiver.recv().unwrap());
     }
 }
 
