@@ -49,6 +49,7 @@ impl Ladybug {
             // delegate the handling of the uci command to the respective method
             match uci_command {
                 UciCommand::Uci => self.handle_uci(&output_sender),
+                UciCommand::IsReady => self.handle_is_ready(&output_sender)
             }
         }
     }
@@ -63,11 +64,16 @@ impl Ladybug {
         }
     }
     
-    /// Handles the "uci" command
+    /// Handles the "uci" command.
     fn handle_uci(&self, output_sender: &Sender<String>) {
         Self::send_output(output_sender, format!("id name {}", self.name));
         Self::send_output(output_sender, format!("id author {}", self.author));
         Self::send_output(output_sender, String::from("uciok"));
+    }
+
+    /// Handles the "isready" command.
+    fn handle_is_ready(&self, output_sender: &Sender<String>) {
+        Self::send_output(output_sender, String::from("readyok"));
     }
 }
 
@@ -111,12 +117,19 @@ mod tests {
     #[test]
     fn test_ladybug_for_uci() {
         let (input_sender, output_receiver) = setup();
-
-        let _ = input_sender.send(String::from("uci"));
         
+        let _ = input_sender.send(String::from("uci"));
         assert_eq!("id name Ladybug 0.1.0", output_receiver.recv().unwrap());
         assert_eq!("id author Felix O.", output_receiver.recv().unwrap());
         assert_eq!("uciok", output_receiver.recv().unwrap());
+    }
+
+    #[test]
+    fn test_ladybug_for_isready() {
+        let (input_sender, output_receiver) = setup();
+        
+        let _ = input_sender.send(String::from("isready"));
+        assert_eq!("readyok", output_receiver.recv().unwrap());
     }
 }
 
