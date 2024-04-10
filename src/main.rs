@@ -33,7 +33,7 @@ fn main() {
     thread::spawn(move || write_output(output_receiver));
 
     // initialize Ladybug
-    let ladybug = Ladybug::default();
+    let mut ladybug = Ladybug::default();
     
     // start running Ladybug
     ladybug.run(output_sender, input_receiver);
