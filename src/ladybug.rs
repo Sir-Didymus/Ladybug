@@ -166,6 +166,7 @@ impl Ladybug {
         Self::send_output(output_sender, String::from("Currently, Ladybug only implements a subset of the UCI protocol:"));
         Self::send_output(output_sender, String::from("uci                              : Ask Ladybug if she supports UCI"));
         Self::send_output(output_sender, String::from("isready                          : Synchronize Ladybug with the GUI"));
+        Self::send_output(output_sender, String::from("position fen <fen> moves <moves> : Setup the board position"));
         Self::send_output(output_sender, String::from("quit                             : Quit Ladybug"));
         Self::send_output(output_sender, String::from("display                          : Print the fen of the current position"));
     }
@@ -286,6 +287,7 @@ mod tests {
         assert_eq!("Currently, Ladybug only implements a subset of the UCI protocol:", output_receiver.recv().unwrap());
         assert_eq!("uci                              : Ask Ladybug if she supports UCI", output_receiver.recv().unwrap());
         assert_eq!("isready                          : Synchronize Ladybug with the GUI", output_receiver.recv().unwrap());
+        assert_eq!("position fen <fen> moves <moves> : Setup the board position", output_receiver.recv().unwrap());
         assert_eq!("quit                             : Quit Ladybug", output_receiver.recv().unwrap());
         assert_eq!("display                          : Print the fen of the current position", output_receiver.recv().unwrap());
     }
