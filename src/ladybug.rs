@@ -144,7 +144,7 @@ impl Ladybug {
         for move_string in moves {
             let ply = Ply::from_string(move_string, board.position);
             match ply {
-                Some(ply) => board.position = board.position.make_move(ply),
+                Some(ply) => board = board.make_move(ply),
                 None => {
                     Self::send_output(output_sender, String::from("info string invalid moves"));
                     return;
@@ -251,8 +251,22 @@ mod tests {
     #[test]
     fn test_ladybug_for_position() {
         let (input_sender, output_receiver) = setup();
-        
-        todo!("Test handle_position")
+
+        let _ = input_sender.send(String::from("position startpos"));
+        let _ = input_sender.send(String::from("display"));
+        assert_eq!("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", output_receiver.recv().unwrap());
+
+        let _ = input_sender.send(String::from("position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+        let _ = input_sender.send(String::from("display"));
+        assert_eq!("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", output_receiver.recv().unwrap());
+
+        let _ = input_sender.send(String::from("position startpos moves e2e4 c7c5 c2c3 b8c6 d2d4"));
+        let _ = input_sender.send(String::from("display"));
+        assert_eq!("r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/2P5/PP3PPP/RNBQKBNR b KQkq d3 0 3", output_receiver.recv().unwrap());
+
+        let _ = input_sender.send(String::from("position fen r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/2P5/PP3PPP/RNBQKBNR b KQkq d3 0 3 moves c5d4 h2h4 d4c3 g1f3 c3b2 f1b5 b2c1q"));
+        let _ = input_sender.send(String::from("display"));
+        assert_eq!("r1bqkbnr/pp1ppppp/2n5/1B6/4P2P/5N2/P4PP1/RNqQK2R w KQkq - 0 7", output_receiver.recv().unwrap());
     }
 
     #[test]
