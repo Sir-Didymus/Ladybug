@@ -56,6 +56,19 @@ impl Piece {
             }
         }
     }
+
+    /// Constructs a piece from the given string slice.
+    pub fn from_string(piece_str: &str) -> Option<Piece> {
+        match piece_str.to_ascii_lowercase().as_str() {
+            "p" => Some(Piece::Pawn),
+            "n" => Some(Piece::Knight),
+            "b" => Some(Piece::Bishop),
+            "r" => Some(Piece::Rook),
+            "q" => Some(Piece::Queen),
+            "k" => Some(Piece::King),
+            _other => None,
+        }
+    }
     
     /// Returns true if the piece is a slider piece, otherwise false.
     pub fn is_slider(&self) -> bool {
@@ -120,6 +133,35 @@ mod tests {
         assert_eq!('r', Rook.to_char(Black));
         assert_eq!('q', Queen.to_char(Black));
         assert_eq!('k', King.to_char(Black));
+    }
+
+    #[test]
+    fn from_string_with_invalid_string_returns_none() {
+        assert_eq!(None, Piece::from_string("test"));
+        assert_eq!(None, Piece::from_string("invalid pieces string"));
+        assert_eq!(None, Piece::from_string("1"));
+        assert_eq!(None, Piece::from_string("p n b r q k"));
+    }
+
+    #[test]
+    fn from_string_with_valid_string_returns_piece() {
+        assert_eq!(Some(Pawn), Piece::from_string("p"));
+        assert_eq!(Some(Pawn), Piece::from_string("P"));
+
+        assert_eq!(Some(Knight), Piece::from_string("n"));
+        assert_eq!(Some(Knight), Piece::from_string("N"));
+
+        assert_eq!(Some(Bishop), Piece::from_string("b"));
+        assert_eq!(Some(Bishop), Piece::from_string("B"));
+
+        assert_eq!(Some(Rook), Piece::from_string("r"));
+        assert_eq!(Some(Rook), Piece::from_string("R"));
+
+        assert_eq!(Some(Queen), Piece::from_string("q"));
+        assert_eq!(Some(Queen), Piece::from_string("Q"));
+
+        assert_eq!(Some(King), Piece::from_string("k"));
+        assert_eq!(Some(King), Piece::from_string("K"));
     }
     
     #[test]
