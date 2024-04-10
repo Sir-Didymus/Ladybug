@@ -36,7 +36,7 @@ pub fn parse_uci(input: String) -> Result<UciCommand, String> {
             } else {
                 match uci_parts[1].as_str() {
                     "perft" => {
-                        if uci_parts.len() < 3 {
+                        if uci_parts.len() != 3 {
                             Err(String::from("info string unknown command"))
                         }
                         else {
@@ -87,6 +87,16 @@ mod tests {
                                                 String::from("-"), String::from("1"), String::from("45"),
                                                  String::from("moves"), String::from("h3h4"), String::from("c6g2")))),
                    uci::parse_uci(String::from("position fen 8/B6p/2b1k1p1/5p2/2PK4/6PP/6P1/8 w - - 1 45 moves h3h4 c6g2")));
+    }
+
+    #[test]
+    fn test_parse_uci_for_go_perft() {
+        assert_eq!(Err(String::from("info string unknown command")), uci::parse_uci(String::from("go perft")));
+        assert_eq!(Err(String::from("info string unknown command")), uci::parse_uci(String::from("go perft one two")));
+        
+        assert_eq!(UciCommand::GoPerft(String::from("5")), uci::parse_uci(String::from("go perft 5")).unwrap());
+        assert_eq!(UciCommand::GoPerft(String::from("0")), uci::parse_uci(String::from("go perft 0")).unwrap());
+        assert_eq!(UciCommand::GoPerft(String::from("100")), uci::parse_uci(String::from("go perft 100")).unwrap());
     }
 
     #[test]
