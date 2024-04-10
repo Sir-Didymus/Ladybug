@@ -33,10 +33,10 @@ fn main() {
     thread::spawn(move || write_output(output_receiver));
 
     // initialize Ladybug
-    let mut ladybug = Ladybug::default();
+    let mut ladybug = Ladybug::new(output_sender.clone(), input_receiver);
     
     // start running Ladybug
-    ladybug.run(output_sender, input_receiver);
+    ladybug.run();
 }
 
 /// Reads input from Stdin and sends it to Ladybug.

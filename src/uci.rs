@@ -4,6 +4,7 @@ pub enum UciCommand {
     Uci,
     IsReady,
     Position(Vec<String>),
+    GoPerft(String),
     Quit,
     Help,
     Display,
@@ -27,6 +28,23 @@ pub fn parse_uci(input: String) -> Result<UciCommand, String> {
             match uci_parts.len() > 1 {
                 false => Err(String::from("info string unknown command")),
                 true => Ok(UciCommand::Position(uci_parts.split_off(1)))
+            }
+        }
+        "go" => {
+            if uci_parts.len() < 2 {
+                Err(String::from("info string unknown command"))
+            } else {
+                match uci_parts[1].as_str() {
+                    "perft" => {
+                        if uci_parts.len() < 3 {
+                            Err(String::from("info string unknown command"))
+                        }
+                        else {
+                            Ok(UciCommand::GoPerft(uci_parts[2].clone()))
+                        }
+                    }
+                    _other => Err(String::from("info string unknown command"))
+                }
             }
         }
         "quit" => Ok(UciCommand::Quit),

@@ -1,5 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 use crate::board::Board;
+use crate::move_gen::perft::perft;
 use crate::move_gen::ply::Ply;
 use crate::uci;
 use crate::uci::{UciCommand};
@@ -10,25 +11,39 @@ pub struct Ladybug {
     name: String,
     author: String,
     board: Board,
+    state: State,
+
+    /// Used to send output to the console.
+    console_output_sender: Sender<String>,
+    
+    /// Used to receive input from both the console and the search thread.
+    input_receiver: Receiver<String>,
 }
 
-impl Default for Ladybug {
+/// The possible states of Ladybug.
+enum State {
+    Idle,
+    GoPerft,
+}
+
+impl Ladybug {
     /// Constructs Ladybug.
-    fn default() -> Self {
+    pub fn new(console_output_sender: Sender<String>, input_receiver: Receiver<String>) -> Self {
         Self {
             name: String::from("Ladybug 0.1.0"),
             author: String::from("Felix O."),
             board: Board::default(),
+            state: State::Idle,
+            console_output_sender,
+            input_receiver
         }
     }
-}
-
-impl Ladybug {
+    
     /// Starts running Ladybug.
-    pub fn run(&mut self, output_sender: Sender<String>, input_sender: Receiver<String>) {
+    pub fn run(&mut self) {
         loop {
             // blocks until Ladybug receives input
-            let input = input_sender.recv();
+            let input = self.input_receiver.recv();
 
             // if the input thread closes the connection, Ladybug must not continue running
             if input.is_err() {
@@ -44,7 +59,7 @@ impl Ladybug {
             let uci_command = match uci_command {
                 // if the uci command cannot be parsed, send the error message to the output thread
                 Err(message) => {
-                    Self::send_output(&output_sender, message);
+                    self.send_output(message);
                     continue;
                 }
                 Ok(command) => command
@@ -52,22 +67,23 @@ impl Ladybug {
 
             // delegate the handling of the uci command to the respective method
             match uci_command {
-                UciCommand::Uci => self.handle_uci(&output_sender),
-                UciCommand::IsReady => self.handle_is_ready(&output_sender),
-                UciCommand::Position(args) => self.handle_position(&output_sender, args),
+                UciCommand::Uci => self.handle_uci(),
+                UciCommand::IsReady => self.handle_is_ready(),
+                UciCommand::Position(args) => self.handle_position(args),
+                UciCommand::GoPerft(depth) => self.handle_go_perft(depth),
                 UciCommand::Quit => {
-                    self.handle_quit(&output_sender);
+                    self.handle_quit();
                     break;
                 }
-                UciCommand::Help => self.handle_help(&output_sender),
-                UciCommand::Display => self.handle_display(&output_sender)
+                UciCommand::Help => self.handle_help(),
+                UciCommand::Display => self.handle_display()
             }
         }
     }
 
     /// Sends the given String to the output thread.
-    fn send_output(output_sender: &Sender<String>, output: String) {
-        let send_result = output_sender.send(output);
+    fn send_output(&self, output: String) {
+        let send_result = self.console_output_sender.send(output);
 
         // if the output thread closes the connection, Ladybug must not continue running
         if send_result.is_err() {
@@ -76,21 +92,21 @@ impl Ladybug {
     }
 
     /// Handles the "uci" command.
-    fn handle_uci(&self, output_sender: &Sender<String>) {
-        Self::send_output(output_sender, format!("id name {}", self.name));
-        Self::send_output(output_sender, format!("id author {}", self.author));
-        Self::send_output(output_sender, String::from("uciok"));
+    fn handle_uci(&self) {
+        self.send_output(format!("id name {}", self.name));
+        self.send_output(format!("id author {}", self.author));
+        self.send_output( String::from("uciok"));
     }
 
     /// Handles the "isready" command.
-    fn handle_is_ready(&self, output_sender: &Sender<String>) {
-        Self::send_output(output_sender, String::from("readyok"));
+    fn handle_is_ready(&self) {
+        self.send_output(String::from("readyok"));
     }
 
     /// Handles the "position" command.
-    fn handle_position(&mut self, output_sender: &Sender<String>, args: Vec<String>) {
+    fn handle_position(&mut self, args: Vec<String>) {
         if args.is_empty() {
-            Self::send_output(output_sender, String::from("info string unknown command"));
+            self.send_output(String::from("info string unknown command"));
             return;
         }
 
@@ -114,7 +130,7 @@ impl Ladybug {
                 }
             }
             _other => {
-                Self::send_output(output_sender, String::from("info string unknown command"));
+                self.send_output(String::from("info string unknown command"));
                 return;
             }
         };
@@ -122,7 +138,7 @@ impl Ladybug {
         // try to parse the fen
         let board = Board::from_fen(fen.as_str());
         if board.is_err() {
-            Self::send_output(output_sender, String::from("info string invalid fen"));
+            self.send_output(String::from("info string invalid fen"));
             return;
         }
         let mut board = board.unwrap();
@@ -146,7 +162,7 @@ impl Ladybug {
             match ply {
                 Some(ply) => board = board.make_move(ply),
                 None => {
-                    Self::send_output(output_sender, String::from("info string invalid moves"));
+                    self.send_output(String::from("info string invalid moves"));
                     return;
                 }
             }
@@ -155,25 +171,38 @@ impl Ladybug {
         self.board = board;
     }
 
+    /// Handles the "go perft <depth>" command
+    fn handle_go_perft(&self, depth_str: String) {
+        let depth = depth_str.parse::<u64>();
+        match depth {
+            Err(_) => {
+                self.send_output(String::from("info string unknown command"));
+            }
+            Ok(depth) => {
+                perft(self.board.position, depth);
+            }
+        }
+    }
+
     /// Handles the "quit" command.
-    fn handle_quit(&self, output_sender: &Sender<String>) {
-        Self::send_output(output_sender, String::from("quit"));
+    fn handle_quit(&self) {
+        self.send_output(String::from("quit"));
     }
 
     /// Handles the "help" command.
-    fn handle_help(&self, output_sender: &Sender<String>) {
-        Self::send_output(output_sender, String::from("Ladybug is a free and UCI compatible chess engine."));
-        Self::send_output(output_sender, String::from("Currently, Ladybug only implements a subset of the UCI protocol:"));
-        Self::send_output(output_sender, String::from("uci                              : Ask Ladybug if she supports UCI"));
-        Self::send_output(output_sender, String::from("isready                          : Synchronize Ladybug with the GUI"));
-        Self::send_output(output_sender, String::from("position fen <fen> moves <moves> : Setup the board position"));
-        Self::send_output(output_sender, String::from("quit                             : Quit Ladybug"));
-        Self::send_output(output_sender, String::from("display                          : Print the fen of the current position"));
+    fn handle_help(&self) {
+        self.send_output(String::from("Ladybug is a free and UCI compatible chess engine."));
+        self.send_output(String::from("Currently, Ladybug only implements a subset of the UCI protocol:"));
+        self.send_output(String::from("uci                              : Ask Ladybug if she supports UCI"));
+        self.send_output(String::from("isready                          : Synchronize Ladybug with the GUI"));
+        self.send_output(String::from("position fen <fen> moves <moves> : Setup the board position"));
+        self.send_output(String::from("quit                             : Quit Ladybug"));
+        self.send_output(String::from("display                          : Print the fen of the current position"));
     }
 
     /// Handles the "display" command.
-    fn handle_display(&self, output_sender: &Sender<String>) {
-        Self::send_output(output_sender, self.board.to_fen());
+    fn handle_display(&self) {
+        self.send_output(self.board.to_fen());
     }
 }
 
@@ -196,10 +225,10 @@ mod tests {
         // create output_sender and output_receiver so that the ladybug thread can send output to the output thread.
         let (output_sender, output_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
 
-        let mut ladybug = Ladybug::default();
+        let mut ladybug = Ladybug::new(output_sender.clone(), input_receiver);
 
         // spawn the Ladybug thread
-        thread::spawn(move || ladybug.run(output_sender, input_receiver));
+        thread::spawn(move || ladybug.run());
 
         (input_sender, output_receiver)
     }
