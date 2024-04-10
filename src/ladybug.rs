@@ -60,6 +60,7 @@ impl Ladybug {
                     break;
                 }
                 UciCommand::Help => self.handle_help(&output_sender),
+                UciCommand::Display => self.handle_display(&output_sender)
             }
         }
     }
@@ -166,6 +167,12 @@ impl Ladybug {
         Self::send_output(output_sender, String::from("uci                              : Ask Ladybug if she supports UCI"));
         Self::send_output(output_sender, String::from("isready                          : Synchronize Ladybug with the GUI"));
         Self::send_output(output_sender, String::from("quit                             : Quit Ladybug"));
+        Self::send_output(output_sender, String::from("display                          : Print the fen of the current position"));
+    }
+
+    /// Handles the "display" command.
+    fn handle_display(&self, output_sender: &Sender<String>) {
+        Self::send_output(output_sender, self.board.to_fen());
     }
 }
 
@@ -173,7 +180,7 @@ impl Ladybug {
 mod tests {
     use std::sync::mpsc;
     use std::sync::mpsc::{Receiver, Sender};
-    use std::thread;
+    use std::{thread};
     use crate::ladybug::Ladybug;
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
@@ -266,6 +273,20 @@ mod tests {
         assert_eq!("uci                              : Ask Ladybug if she supports UCI", output_receiver.recv().unwrap());
         assert_eq!("isready                          : Synchronize Ladybug with the GUI", output_receiver.recv().unwrap());
         assert_eq!("quit                             : Quit Ladybug", output_receiver.recv().unwrap());
+        assert_eq!("display                          : Print the fen of the current position", output_receiver.recv().unwrap());
+    }
+
+    #[test]
+    fn test_ladybug_for_display() {
+        let (input_sender, output_receiver) = setup();
+
+        let _ = input_sender.send(String::from("position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+        let _ = input_sender.send(String::from("display"));
+        assert_eq!("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", output_receiver.recv().unwrap());
+
+        let _ = input_sender.send(String::from("position fen r1bqk1nr/ppp1bBpp/3p4/n7/3PP3/1Q3N2/P4PPP/RNB1K2R b KQkq - 0 9"));
+        let _ = input_sender.send(String::from("display"));
+        assert_eq!("r1bqk1nr/ppp1bBpp/3p4/n7/3PP3/1Q3N2/P4PPP/RNB1K2R b KQkq - 0 9", output_receiver.recv().unwrap());
     }
 }
 

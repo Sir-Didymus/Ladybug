@@ -5,7 +5,8 @@ pub enum UciCommand {
     IsReady,
     Position(Vec<String>),
     Quit,
-    Help
+    Help,
+    Display,
 }
 
 /// Tries to parse a string as a UCI command.
@@ -30,6 +31,7 @@ pub fn parse_uci(input: String) -> Result<UciCommand, String> {
         }
         "quit" => Ok(UciCommand::Quit),
         "help" => Ok(UciCommand::Help),
+        "display" => Ok(UciCommand::Display),
         _other => Err(String::from("info string unknown command")),
     }
 }
@@ -77,5 +79,10 @@ mod tests {
     #[test]
     fn test_parse_uci_for_help() {
         assert_eq!(UciCommand::Help, uci::parse_uci(String::from("help")).unwrap());
+    }
+
+    #[test]
+    fn test_parse_uci_for_display() {
+        assert_eq!(UciCommand::Display, uci::parse_uci(String::from("display")).unwrap());
     }
 }
