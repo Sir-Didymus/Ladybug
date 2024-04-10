@@ -50,7 +50,7 @@ impl Board {
         Self::parse_fen(fen)
     }
 
-    /// Returns a new Board that reflects the board state where the given move (ply) has been played.
+    /// Returns a new board that reflects the board state where the given move (ply) has been played.
     pub fn make_move(&self, ply: Ply) -> Board {
         let mut board = *self;
         
