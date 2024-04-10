@@ -1,12 +1,12 @@
 use crate::board::bitboard::Bitboard;
 use crate::board::Board;
 use crate::board::castling_rights::CastlingRights;
-use crate::board::color::Color;
+use crate::board::color::{Color, NUM_COLORS};
 use crate::board::color::Color::{Black, White};
-use crate::board::file::File;
+use crate::board::file::{File, NUM_FILES};
 use crate::board::piece::Piece::{Bishop, King, Knight, Pawn, Queen, Rook};
 use crate::board::position::Position;
-use crate::board::rank::Rank;
+use crate::board::rank::{NUM_RANKS, Rank};
 use crate::board::square::Square;
 
 impl Board {
@@ -50,6 +50,79 @@ impl Board {
         };
 
         Ok(board)
+    }
+
+    /// Builds a FEN string representing the board state.
+    pub fn to_fen(&self) -> String {
+        let mut fen = String::from("");
+
+        // pieces
+        for rank in (0..NUM_RANKS).rev() {
+            let mut files_to_skip = 0;
+            for file in 0..NUM_FILES {
+                let piece = self.position.get_piece(Square::from_file_rank(File::from_index(file), Rank::from_index(rank)));
+                match piece {
+                    Some((piece, color)) => {
+                        if files_to_skip > 0 {
+                            fen.push_str(format!("{files_to_skip}").as_str());
+                            files_to_skip = 0;
+                        }
+                        fen.push(piece.to_char(color));
+                    }
+                    None => {
+                        files_to_skip += 1;
+                    }
+                }
+            }
+            if files_to_skip > 0 {
+                fen.push_str(format!("{files_to_skip}").as_str());
+            }
+            if rank != 0 {
+                fen.push('/');
+            }
+        }
+
+        // color
+        match self.position.color_to_move {
+            White => fen.push_str(" w"),
+            Black => fen.push_str(" b"),
+        }
+
+        // castling rights
+        let mut castling_rights_str_both = String::from("");
+        for color_index in 0..NUM_COLORS {
+            let mut castling_rights_str = String::from("");
+            match self.position.castling_rights[color_index as usize] {
+                CastlingRights::NoRights => {}
+                CastlingRights::KingSide => castling_rights_str.push('K'),
+                CastlingRights::QueenSide => castling_rights_str.push('Q'),
+                CastlingRights::Both => castling_rights_str.push_str("KQ"),
+            }
+            if Color::from_index(color_index) == Black {
+                castling_rights_str = castling_rights_str.to_ascii_lowercase();
+            }
+            castling_rights_str_both += castling_rights_str.as_str();
+        }
+        match castling_rights_str_both.as_str() {
+            "" => fen.push_str(" -"),
+            other => {
+                fen.push_str(format!(" {other}").as_str());
+            }
+        }
+
+        // en passant
+        match self.position.en_passant {
+            None => fen.push_str(" -"),
+            Some(square) => fen.push_str(format!(" {square}").as_str()),
+        }
+
+        // halfmove clock
+        fen.push_str(format!(" {}", self.halfmove_clock).as_str());
+
+        // fullmove counter
+        fen.push_str(format!(" {}", self.fullmove_counter).as_str());
+
+        fen
     }
 
     /// Takes a FEN and splits it into its 6 parts.
@@ -297,7 +370,7 @@ mod tests {
         assert_eq!("2", fen_parts[5]);
 
         // starting position with missing full move counter
-        let fen_parts =  Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1").unwrap();
+        let fen_parts = Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1").unwrap();
         assert_eq!(6, fen_parts.len());
         assert_eq!("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R", fen_parts[0]);
         assert_eq!("b", fen_parts[1]);
@@ -307,7 +380,7 @@ mod tests {
         assert_eq!("1", fen_parts[5]);
 
         // starting position with missing halfmove clock and full move counter
-        let fen_parts =  Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -").unwrap();
+        let fen_parts = Board::split_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -").unwrap();
         assert_eq!(6, fen_parts.len());
         assert_eq!("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R", fen_parts[0]);
         assert_eq!("b", fen_parts[1]);
@@ -464,5 +537,52 @@ mod tests {
         assert_eq!(Err(String::from("Invalid FEN")), Board::parse_fullmove_counter("a"));
         assert_eq!(Err(String::from("Invalid FEN")), Board::parse_fullmove_counter("I like Rust"));
         assert_eq!(Err(String::from("Invalid FEN")), Board::parse_fullmove_counter("0"));
+    }
+
+    #[test]
+    fn test_to_fen() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1 (starting position)
+        let board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+        assert_eq!(board, Board::from_fen(board.to_fen().as_str()).unwrap());
+
+        // position 2
+        let board = Board::from_fen("1kr5/R2Q2pp/8/4p1p1/2BpP3/8/2P1KP2/1R6 b - - 0 38").unwrap();
+        assert_eq!(board, Board::from_fen(board.to_fen().as_str()).unwrap());
+
+        // position 3
+        let board = Board::from_fen("rnbqk2r/ppp2Npp/3p1n2/2b5/2B1P3/8/PPPP1PPP/RNBQK2R b KQkq - 0 5").unwrap();
+        assert_eq!(board, Board::from_fen(board.to_fen().as_str()).unwrap());
+
+        // position 4
+        let board = Board::from_fen("r6k/4Qpp1/b5qp/8/PP2PP2/1B6/6PP/R3R1K1 b - - 0 26").unwrap();
+        assert_eq!(board, Board::from_fen(board.to_fen().as_str()).unwrap());
+
+        // position 5
+        let board = Board::from_fen("r1bq1b1r/ppp1n1pp/4k3/3np3/2B5/2N2Q2/PPPP1PPP/R1B1K2R w KQ - 4 9").unwrap();
+        assert_eq!(board, Board::from_fen(board.to_fen().as_str()).unwrap());
+
+        // position 6
+        let board = Board::from_fen("r1bqkb1r/pp3ppp/2n2n2/4p3/2P5/3P4/PP3PPP/RNBQKBNR w KQkq e6 0 6").unwrap();
+        assert_eq!(board, Board::from_fen(board.to_fen().as_str()).unwrap());
+
+        // position 7
+        let board = Board::from_fen("3q1r1k/p3b1pp/4Q3/2r1p3/3p4/3P1N2/PPP2PPP/R4RK1 b - - 0 18").unwrap();
+        assert_eq!(board, Board::from_fen(board.to_fen().as_str()).unwrap());
+
+        // position 8
+        let board = Board::from_fen("1r3rk1/2RR1p1p/p3pQp1/1p6/6P1/1P5P/5PBK/1q6 w - - 0 28").unwrap();
+        assert_eq!(board, Board::from_fen(board.to_fen().as_str()).unwrap());
+
+        // position 9
+        let board = Board::from_fen("8/8/8/8/8/8/8/8 w - - 0 1").unwrap();
+        assert_eq!(board, Board::from_fen(board.to_fen().as_str()).unwrap());
+
+        // position 10
+        let board = Board::from_fen("8/1k6/8/8/5K2/8/8/8 w - e3 0 1").unwrap();
+        assert_eq!(board, Board::from_fen(board.to_fen().as_str()).unwrap());
     }
 }
