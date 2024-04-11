@@ -8,14 +8,12 @@ use crate::uci::{UciCommand};
 /// The main character in this project!
 /// The Ladybug struct acts as the UCI client and can receive and handle UCI commands.
 pub struct Ladybug {
-    name: String,
-    author: String,
+   /// The current board position.
     board: Board,
+    /// The current state of Ladybug.
     state: State,
-
     /// Used to send output to the console.
     console_output_sender: Sender<String>,
-    
     /// Used to receive input from both the console and the search thread.
     input_receiver: Receiver<String>,
 }
@@ -30,8 +28,6 @@ impl Ladybug {
     /// Constructs Ladybug.
     pub fn new(console_output_sender: Sender<String>, input_receiver: Receiver<String>) -> Self {
         Self {
-            name: String::from("Ladybug 0.1.0"),
-            author: String::from("Felix O."),
             board: Board::default(),
             state: State::Idle,
             console_output_sender,
@@ -93,8 +89,8 @@ impl Ladybug {
 
     /// Handles the "uci" command.
     fn handle_uci(&self) {
-        self.send_output(format!("id name {}", self.name));
-        self.send_output(format!("id author {}", self.author));
+        self.send_output(format!("id name Ladybug 0.1.0"));
+        self.send_output(format!("id author Felix O."));
         self.send_output( String::from("uciok"));
     }
 
