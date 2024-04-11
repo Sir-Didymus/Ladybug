@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use crate::board::color::Color;
 use crate::board::piece::Piece;
 use crate::board::position::Position;
 use crate::board::square::Square;
@@ -29,6 +30,9 @@ impl Display for Ply {
         let mut output: String = String::from("");
         output += format!("{}", self.source).as_str();
         output += format!("{}", self.target).as_str();
+        if self.promotion_piece.is_some() {
+            output.push(self.promotion_piece.unwrap().to_char(Color::Black));
+        }
         write!(f, "{}", output)
     }
 }
@@ -90,6 +94,7 @@ impl Ply {
 mod tests {
     use crate::board::piece::Piece;
     use crate::board::{Board, square};
+    use crate::board::piece::Piece::Queen;
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
     use crate::move_gen::ply::Ply;
@@ -112,6 +117,11 @@ mod tests {
         ply.source = square::H3;
         ply.target = square::H6;
         assert_eq!("h3h6", format!("{ply}"));
+        
+        ply.source = square::H7;
+        ply.target = square::H8;
+        ply.promotion_piece = Some(Queen);
+        assert_eq!("h7h8q", format!("{ply}"));
     }
 
     #[test]
