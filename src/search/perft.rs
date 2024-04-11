@@ -77,7 +77,9 @@ mod tests {
         let _ = LOOKUP_TABLE.set(lookup);
     }
     
-    /// Creates a search instance and spawns a test thread that will take the search thread's output
+    /// Creates a search instance and spawns a test thread that will take the search thread's output.
+    /// We don't actually care for the output since we only look at the returned u64 value,
+    /// but since the search tries to send the results to the main thread, the receiver must not be dropped.
     fn setup() -> Search {
         // create search_command_sender and search_command_receiver so that the test thread can send commands to the search thread
         let (search_command_sender, search_command_receiver): (Sender<SearchCommand>, Receiver<SearchCommand>) = mpsc::channel();
@@ -86,7 +88,7 @@ mod tests {
         let (test_sender, test_receiver): (Sender<Message>, Receiver<Message>) = mpsc::channel();
 
         // initialize the search
-        let mut search = Search::new(search_command_receiver, test_sender);
+        let search = Search::new(search_command_receiver, test_sender);
         
         // spawn the test thread
         thread::spawn(move || {
