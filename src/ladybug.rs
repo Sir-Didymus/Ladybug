@@ -17,7 +17,13 @@ pub struct Ladybug {
     /// Used to send output to the console.
     console_output_sender: Sender<String>,
     /// Used to receive input from both the console and the search thread.
-    input_receiver: Receiver<String>,
+    input_receiver: Receiver<Message>,
+}
+
+/// The two types of messages ladybug can receive.
+pub enum Message {
+    ConsoleMessage(String),
+    SearchMessage(String),
 }
 
 /// The possible states of Ladybug.
@@ -28,13 +34,13 @@ enum State {
 
 impl Ladybug {
     /// Constructs Ladybug.
-    pub fn new(search_command_sender: Sender<SearchCommand>, console_output_sender: Sender<String>, input_receiver: Receiver<String>) -> Self {
+    pub fn new(search_command_sender: Sender<SearchCommand>, console_output_sender: Sender<String>, input_receiver: Receiver<Message>) -> Self {
         Self {
             board: Board::default(),
             state: State::Idle,
             search_command_sender,
             console_output_sender,
-            input_receiver
+            input_receiver,
         }
     }
     
@@ -49,39 +55,48 @@ impl Ladybug {
                 panic!("The input thread has unexpectedly closed the channel connection.")
             }
 
-            // get the input string from the result
-            let input = input.unwrap();
-
-            // try to parse the uci command
-            let uci_command = uci::parse_uci(input);
-
-            let uci_command = match uci_command {
-                // if the uci command cannot be parsed, send the error message to the output thread
-                Err(message) => {
-                    self.send_output(message);
-                    continue;
+            // get the message from the result
+            let message = input.unwrap();
+            
+            match message {
+                // print search messages to the console
+                Message::SearchMessage(msg) => {
+                    self.send_console(msg);
                 }
-                Ok(command) => command
-            };
+                // parse console messages as uci and delegate them to the respective handler methods
+                Message::ConsoleMessage(msg) => {
+                    // try to parse the uci command
+                    let uci_command = uci::parse_uci(msg);
 
-            // delegate the handling of the uci command to the respective method
-            match uci_command {
-                UciCommand::Uci => self.handle_uci(),
-                UciCommand::IsReady => self.handle_is_ready(),
-                UciCommand::Position(args) => self.handle_position(args),
-                UciCommand::GoPerft(depth) => self.handle_go_perft(depth),
-                UciCommand::Quit => {
-                    self.handle_quit();
-                    break;
+                    let uci_command = match uci_command {
+                        // if the uci command cannot be parsed, send the error message to the output thread
+                        Err(message) => {
+                            self.send_console(message);
+                            continue;
+                        }
+                        Ok(command) => command
+                    };
+
+                    // delegate the handling of the uci command to the respective method
+                    match uci_command {
+                        UciCommand::Uci => self.handle_uci(),
+                        UciCommand::IsReady => self.handle_is_ready(),
+                        UciCommand::Position(args) => self.handle_position(args),
+                        UciCommand::GoPerft(depth) => self.handle_go_perft(depth),
+                        UciCommand::Quit => {
+                            self.handle_quit();
+                            break;
+                        }
+                        UciCommand::Help => self.handle_help(),
+                        UciCommand::Display => self.handle_display()
+                    }
                 }
-                UciCommand::Help => self.handle_help(),
-                UciCommand::Display => self.handle_display()
             }
         }
     }
 
-    /// Sends the given String to the output thread.
-    fn send_output(&self, output: String) {
+    /// Sends the given string to the output thread.
+    fn send_console(&self, output: String) {
         let send_result = self.console_output_sender.send(output);
 
         // if the output thread closes the connection, Ladybug must not continue running
@@ -90,22 +105,32 @@ impl Ladybug {
         }
     }
 
+    /// Sends the given search command to the search thread.
+    fn send_search(&self, search_command: SearchCommand) {
+        let send_result = self.search_command_sender.send(search_command);
+
+        // if the search thread closes the connection, Ladybug must not continue running
+        if send_result.is_err() {
+            panic!("The search thread has unexpectedly closed the channel connection.")
+        }
+    }
+
     /// Handles the "uci" command.
     fn handle_uci(&self) {
-        self.send_output(format!("id name Ladybug 0.1.0"));
-        self.send_output(format!("id author Felix O."));
-        self.send_output( String::from("uciok"));
+        self.send_console("id name Ladybug 0.1.0".to_string());
+        self.send_console("id author Felix O.".to_string());
+        self.send_console(String::from("uciok"));
     }
 
     /// Handles the "isready" command.
     fn handle_is_ready(&self) {
-        self.send_output(String::from("readyok"));
+        self.send_console(String::from("readyok"));
     }
 
     /// Handles the "position" command.
     fn handle_position(&mut self, args: Vec<String>) {
         if args.is_empty() {
-            self.send_output(String::from("info string unknown command"));
+            self.send_console(String::from("info string unknown command"));
             return;
         }
 
@@ -129,7 +154,7 @@ impl Ladybug {
                 }
             }
             _other => {
-                self.send_output(String::from("info string unknown command"));
+                self.send_console(String::from("info string unknown command"));
                 return;
             }
         };
@@ -137,7 +162,7 @@ impl Ladybug {
         // try to parse the fen
         let board = Board::from_fen(fen.as_str());
         if board.is_err() {
-            self.send_output(String::from("info string invalid fen"));
+            self.send_console(String::from("info string invalid fen"));
             return;
         }
         let mut board = board.unwrap();
@@ -161,7 +186,7 @@ impl Ladybug {
             match ply {
                 Some(ply) => board = board.make_move(ply),
                 None => {
-                    self.send_output(String::from("info string invalid moves"));
+                    self.send_console(String::from("info string invalid moves"));
                     return;
                 }
             }
@@ -175,33 +200,33 @@ impl Ladybug {
         let depth = depth_str.parse::<u64>();
         match depth {
             Err(_) => {
-                self.send_output(String::from("info string unknown command"));
+                self.send_console(String::from("info string unknown command"));
             }
             Ok(depth) => {
-                //perft(self.board.position, depth);
+                self.send_search(SearchCommand::Perft((self.board.position, depth)));
             }
         }
     }
 
     /// Handles the "quit" command.
     fn handle_quit(&self) {
-        self.send_output(String::from("quit"));
+        self.send_console(String::from("quit"));
     }
 
     /// Handles the "help" command.
     fn handle_help(&self) {
-        self.send_output(String::from("Ladybug is a free and UCI compatible chess engine."));
-        self.send_output(String::from("Currently, Ladybug only implements a subset of the UCI protocol:"));
-        self.send_output(String::from("uci                              : Ask Ladybug if she supports UCI"));
-        self.send_output(String::from("isready                          : Synchronize Ladybug with the GUI"));
-        self.send_output(String::from("position fen <fen> moves <moves> : Setup the board position"));
-        self.send_output(String::from("quit                             : Quit Ladybug"));
-        self.send_output(String::from("display                          : Print the fen of the current position"));
+        self.send_console(String::from("Ladybug is a free and UCI compatible chess engine."));
+        self.send_console(String::from("Currently, Ladybug only implements a subset of the UCI protocol:"));
+        self.send_console(String::from("uci                              : Ask Ladybug if she supports UCI"));
+        self.send_console(String::from("isready                          : Synchronize Ladybug with the GUI"));
+        self.send_console(String::from("position fen <fen> moves <moves> : Setup the board position"));
+        self.send_console(String::from("quit                             : Quit Ladybug"));
+        self.send_console(String::from("display                          : Print the fen of the current position"));
     }
 
     /// Handles the "display" command.
     fn handle_display(&self) {
-        self.send_output(self.board.to_fen());
+        self.send_console(self.board.to_fen());
     }
 }
 
@@ -210,36 +235,38 @@ mod tests {
     use std::sync::mpsc;
     use std::sync::mpsc::{Receiver, Sender};
     use std::{thread};
-    use crate::ladybug::Ladybug;
+    use crate::ladybug::{Ladybug, Message};
+    use crate::ladybug::Message::ConsoleMessage;
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
     use crate::search::{Search, SearchCommand};
 
     /// Creates a new Ladybug thread and returns the input_sender and output_receiver.
-    fn setup() -> (Sender<String>, Receiver<String>) {
+    fn setup() -> (Sender<Message>, Receiver<String>) {
         initialize_lookup_table();
 
         // create search_command_sender and search_command_receiver so that the ladybug thread can send commands to the search thread
         let (search_command_sender, search_command_receiver): (Sender<SearchCommand>, Receiver<SearchCommand>) = mpsc::channel();
 
-        // create input_sender and input_receiver so that the input thread can send input to the ladybug thread
-        let (input_sender, input_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
+        // create message_sender and message_receiver so that the input and search threads can send input to the ladybug thread
+        let (message_sender, message_receiver): (Sender<Message>, Receiver<Message>) = mpsc::channel();
 
         // create output_sender and output_receiver so that the ladybug thread can send output to the output thread.
         let (output_sender, output_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
         
         // initialize the search
-        let mut search = Search::new(search_command_receiver, input_sender.clone());
+        let mut search = Search::new(search_command_receiver, message_sender.clone());
         
         // spawn the search thread
         thread::spawn(move || search.run());
 
-        let mut ladybug = Ladybug::new(search_command_sender, output_sender.clone(), input_receiver);
+        // initialize Ladybug
+        let mut ladybug = Ladybug::new(search_command_sender, output_sender.clone(), message_receiver);
 
         // spawn the Ladybug thread
         thread::spawn(move || ladybug.run());
 
-        (input_sender, output_receiver)
+        (message_sender, output_receiver)
     }
 
     /// helper function to initialize the lookup table
@@ -253,19 +280,19 @@ mod tests {
     fn test_ladybug_with_invalid_uci_input_prints_error_message() {
         let (input_sender, output_receiver) = setup();
 
-        let _ = input_sender.send(String::from("Not Uci"));
+        let _ = input_sender.send(ConsoleMessage(String::from("Not Uci")));
         assert_eq!("info string unknown command", output_receiver.recv().unwrap());
 
-        let _ = input_sender.send(String::from("       "));
+        let _ = input_sender.send(ConsoleMessage(String::from("       ")));
         assert_eq!("info string unknown command", output_receiver.recv().unwrap());
 
-        let _ = input_sender.send(String::from("123456789"));
+        let _ = input_sender.send(ConsoleMessage(String::from("123456789")));
         assert_eq!("info string unknown command", output_receiver.recv().unwrap());
 
-        let _ = input_sender.send(String::from("position test"));
+        let _ = input_sender.send(ConsoleMessage(String::from("position test")));
         assert_eq!("info string unknown command", output_receiver.recv().unwrap());
 
-        let _ = input_sender.send(String::from("position fen this is invalid fen"));
+        let _ = input_sender.send(ConsoleMessage(String::from("position fen this is invalid fen")));
         assert_eq!("info string invalid fen", output_receiver.recv().unwrap());
     }
 
@@ -273,7 +300,7 @@ mod tests {
     fn test_ladybug_for_uci() {
         let (input_sender, output_receiver) = setup();
 
-        let _ = input_sender.send(String::from("uci"));
+        let _ = input_sender.send(ConsoleMessage(String::from("uci")));
         assert_eq!("id name Ladybug 0.1.0", output_receiver.recv().unwrap());
         assert_eq!("id author Felix O.", output_receiver.recv().unwrap());
         assert_eq!("uciok", output_receiver.recv().unwrap());
@@ -283,7 +310,7 @@ mod tests {
     fn test_ladybug_for_isready() {
         let (input_sender, output_receiver) = setup();
 
-        let _ = input_sender.send(String::from("isready"));
+        let _ = input_sender.send(ConsoleMessage(String::from("isready")));
         assert_eq!("readyok", output_receiver.recv().unwrap());
     }
 
@@ -291,20 +318,20 @@ mod tests {
     fn test_ladybug_for_position() {
         let (input_sender, output_receiver) = setup();
 
-        let _ = input_sender.send(String::from("position startpos"));
-        let _ = input_sender.send(String::from("display"));
+        let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
+        let _ = input_sender.send(ConsoleMessage(String::from("display")));
         assert_eq!("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", output_receiver.recv().unwrap());
 
-        let _ = input_sender.send(String::from("position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
-        let _ = input_sender.send(String::from("display"));
+        let _ = input_sender.send(ConsoleMessage(String::from("position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")));
+        let _ = input_sender.send(ConsoleMessage(String::from("display")));
         assert_eq!("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", output_receiver.recv().unwrap());
 
-        let _ = input_sender.send(String::from("position startpos moves e2e4 c7c5 c2c3 b8c6 d2d4"));
-        let _ = input_sender.send(String::from("display"));
+        let _ = input_sender.send(ConsoleMessage(String::from("position startpos moves e2e4 c7c5 c2c3 b8c6 d2d4")));
+        let _ = input_sender.send(ConsoleMessage(String::from("display")));
         assert_eq!("r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/2P5/PP3PPP/RNBQKBNR b KQkq d3 0 3", output_receiver.recv().unwrap());
 
-        let _ = input_sender.send(String::from("position fen r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/2P5/PP3PPP/RNBQKBNR b KQkq d3 0 3 moves c5d4 h2h4 d4c3 g1f3 c3b2 f1b5 b2c1q"));
-        let _ = input_sender.send(String::from("display"));
+        let _ = input_sender.send(ConsoleMessage(String::from("position fen r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/2P5/PP3PPP/RNBQKBNR b KQkq d3 0 3 moves c5d4 h2h4 d4c3 g1f3 c3b2 f1b5 b2c1q")));
+        let _ = input_sender.send(ConsoleMessage(String::from("display")));
         assert_eq!("r1bqkbnr/pp1ppppp/2n5/1B6/4P2P/5N2/P4PP1/RNqQK2R w KQkq - 0 7", output_receiver.recv().unwrap());
     }
 
@@ -312,7 +339,7 @@ mod tests {
     fn test_ladybug_for_quit() {
         let (input_sender, output_receiver) = setup();
 
-        let _ = input_sender.send(String::from("quit"));
+        let _ = input_sender.send(ConsoleMessage(String::from("quit")));
         assert_eq!("quit", output_receiver.recv().unwrap());
     }
 
@@ -320,7 +347,7 @@ mod tests {
     fn test_ladybug_for_help() {
         let (input_sender, output_receiver) = setup();
 
-        let _ = input_sender.send(String::from("help"));
+        let _ = input_sender.send(ConsoleMessage(String::from("help")));
         assert_eq!("Ladybug is a free and UCI compatible chess engine.", output_receiver.recv().unwrap());
         assert_eq!("Currently, Ladybug only implements a subset of the UCI protocol:", output_receiver.recv().unwrap());
         assert_eq!("uci                              : Ask Ladybug if she supports UCI", output_receiver.recv().unwrap());
@@ -334,12 +361,12 @@ mod tests {
     fn test_ladybug_for_display() {
         let (input_sender, output_receiver) = setup();
 
-        let _ = input_sender.send(String::from("position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
-        let _ = input_sender.send(String::from("display"));
+        let _ = input_sender.send(ConsoleMessage(String::from("position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")));
+        let _ = input_sender.send(ConsoleMessage(String::from("display")));
         assert_eq!("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", output_receiver.recv().unwrap());
 
-        let _ = input_sender.send(String::from("position fen r1bqk1nr/ppp1bBpp/3p4/n7/3PP3/1Q3N2/P4PPP/RNB1K2R b KQkq - 0 9"));
-        let _ = input_sender.send(String::from("display"));
+        let _ = input_sender.send(ConsoleMessage(String::from("position fen r1bqk1nr/ppp1bBpp/3p4/n7/3PP3/1Q3N2/P4PPP/RNB1K2R b KQkq - 0 9")));
+        let _ = input_sender.send(ConsoleMessage(String::from("display")));
         assert_eq!("r1bqk1nr/ppp1bBpp/3p4/n7/3PP3/1Q3N2/P4PPP/RNB1K2R b KQkq - 0 9", output_receiver.recv().unwrap());
     }
 }

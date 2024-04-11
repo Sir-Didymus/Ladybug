@@ -22,7 +22,7 @@ impl Search {
         for ply in move_list {
             let node_count_inner = self.perft_driver(position.make_move(ply), depth - 1);
             node_count += node_count_inner;
-            println!("{ply}: {node_count_inner}");
+            self.send_output(format!("{ply}: {node_count_inner}"));
         }
 
         self.send_output(format!("\nSearched {node_count} nodes in {:?}", time.elapsed()));
@@ -65,6 +65,7 @@ mod tests {
     use std::sync::mpsc::{Receiver, Sender};
     use std::thread;
     use crate::board::Board;
+    use crate::ladybug::Message;
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
     use crate::search::{Search, SearchCommand};
@@ -81,8 +82,8 @@ mod tests {
         // create search_command_sender and search_command_receiver so that the test thread can send commands to the search thread
         let (search_command_sender, search_command_receiver): (Sender<SearchCommand>, Receiver<SearchCommand>) = mpsc::channel();
         
-        // create a test_sender and test_receiver so that search thread can send commands to the test thread
-        let (test_sender, test_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
+        // create a test_sender and test_receiver so that search thread can send output to the test thread
+        let (test_sender, test_receiver): (Sender<Message>, Receiver<Message>) = mpsc::channel();
 
         // initialize the search
         let mut search = Search::new(search_command_receiver, test_sender);
