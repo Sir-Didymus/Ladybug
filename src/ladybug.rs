@@ -248,12 +248,13 @@ impl Ladybug {
     fn handle_help(&self) {
         self.send_console(String::from("Ladybug is a free and UCI compatible chess engine."));
         self.send_console(String::from("Currently, Ladybug only implements a subset of the UCI protocol:"));
-        self.send_console(String::from("uci                              : Ask Ladybug if she supports UCI"));
-        self.send_console(String::from("isready                          : Synchronize Ladybug with the GUI"));
-        self.send_console(String::from("position fen <fen> moves <moves> : Setup the board position"));
-        self.send_console(String::from("go perft <depth>                 : Perform a perft test"));
-        self.send_console(String::from("quit                             : Quit Ladybug"));
-        self.send_console(String::from("display                          : Print the fen of the current position"));
+        self.send_console(String::from("uci                                                     : Ask Ladybug if she supports UCI"));
+        self.send_console(String::from("isready                                                 : Synchronize Ladybug with the GUI"));
+        self.send_console(String::from("position fen <fen> moves <moves>                        : Setup the board position"));
+        self.send_console(String::from("go wtime <time> btime <time> winc <time> binc <time>    : Start searching"));
+        self.send_console(String::from("go perft <depth>                                        : Perform a perft test"));
+        self.send_console(String::from("quit                                                    : Quit Ladybug"));
+        self.send_console(String::from("display                                                 : Print the fen of the current position"));
     }
 
     /// Handles the "display" command.
@@ -402,12 +403,13 @@ mod tests {
         let _ = input_sender.send(ConsoleMessage(String::from("help")));
         assert_eq!("Ladybug is a free and UCI compatible chess engine.", output_receiver.recv().unwrap());
         assert_eq!("Currently, Ladybug only implements a subset of the UCI protocol:", output_receiver.recv().unwrap());
-        assert_eq!("uci                              : Ask Ladybug if she supports UCI", output_receiver.recv().unwrap());
-        assert_eq!("isready                          : Synchronize Ladybug with the GUI", output_receiver.recv().unwrap());
-        assert_eq!("position fen <fen> moves <moves> : Setup the board position", output_receiver.recv().unwrap());
-        assert_eq!("go perft <depth>                 : Perform a perft test", output_receiver.recv().unwrap());
-        assert_eq!("quit                             : Quit Ladybug", output_receiver.recv().unwrap());
-        assert_eq!("display                          : Print the fen of the current position", output_receiver.recv().unwrap());
+        assert_eq!("uci                                                     : Ask Ladybug if she supports UCI", output_receiver.recv().unwrap());
+        assert_eq!("isready                                                 : Synchronize Ladybug with the GUI", output_receiver.recv().unwrap());
+        assert_eq!("position fen <fen> moves <moves>                        : Setup the board position", output_receiver.recv().unwrap());
+        assert_eq!("go wtime <time> btime <time> winc <time> binc <time>    : Start searching", output_receiver.recv().unwrap());
+        assert_eq!("go perft <depth>                                        : Perform a perft test", output_receiver.recv().unwrap());
+        assert_eq!("quit                                                    : Quit Ladybug", output_receiver.recv().unwrap());
+        assert_eq!("display                                                 : Print the fen of the current position", output_receiver.recv().unwrap());
     }
 
     #[test]
