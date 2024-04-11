@@ -25,7 +25,7 @@ impl Search {
             self.send_output(format!("{ply}: {node_count_inner}"));
         }
 
-        self.send_output(format!("\nSearched {node_count} nodes in {:?}", time.elapsed()));
+        self.send_output(format!("Searched {node_count} nodes in {:?}", time.elapsed()));
 
         node_count
     }

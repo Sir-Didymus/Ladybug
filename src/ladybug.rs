@@ -220,6 +220,7 @@ impl Ladybug {
         self.send_console(String::from("uci                              : Ask Ladybug if she supports UCI"));
         self.send_console(String::from("isready                          : Synchronize Ladybug with the GUI"));
         self.send_console(String::from("position fen <fen> moves <moves> : Setup the board position"));
+        self.send_console(String::from("go perft <depth>                 : Perform a perft test"));
         self.send_console(String::from("quit                             : Quit Ladybug"));
         self.send_console(String::from("display                          : Print the fen of the current position"));
     }
@@ -336,6 +337,17 @@ mod tests {
     }
 
     #[test]
+    fn test_ladybug_for_go_perft() {
+        let (input_sender, output_receiver) = setup();
+
+        let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
+        let _ = input_sender.send(ConsoleMessage(String::from("go perft 4")));
+        assert_eq!("a2a3: 8457", output_receiver.recv().unwrap());
+        assert_eq!("a2a4: 9329", output_receiver.recv().unwrap());
+        assert_eq!("b2b3: 9345", output_receiver.recv().unwrap());
+    }
+    
+    #[test]
     fn test_ladybug_for_quit() {
         let (input_sender, output_receiver) = setup();
 
@@ -353,6 +365,7 @@ mod tests {
         assert_eq!("uci                              : Ask Ladybug if she supports UCI", output_receiver.recv().unwrap());
         assert_eq!("isready                          : Synchronize Ladybug with the GUI", output_receiver.recv().unwrap());
         assert_eq!("position fen <fen> moves <moves> : Setup the board position", output_receiver.recv().unwrap());
+        assert_eq!("go perft <depth>                 : Perform a perft test", output_receiver.recv().unwrap());
         assert_eq!("quit                             : Quit Ladybug", output_receiver.recv().unwrap());
         assert_eq!("display                          : Print the fen of the current position", output_receiver.recv().unwrap());
     }
