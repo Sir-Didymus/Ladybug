@@ -4,6 +4,7 @@ pub enum UciCommand {
     Uci,
     IsReady,
     Position(Vec<String>),
+    GoClockTime(Vec<String>),
     GoPerft(String),
     Quit,
     Help,
@@ -43,6 +44,7 @@ pub fn parse_uci(input: String) -> Result<UciCommand, String> {
                             Ok(UciCommand::GoPerft(uci_parts[2].clone()))
                         }
                     }
+                    "wtime" => Ok(UciCommand::GoClockTime(uci_parts.split_off(1))),
                     _other => Err(String::from("info string unknown command"))
                 }
             }
@@ -87,6 +89,12 @@ mod tests {
                                                 String::from("-"), String::from("1"), String::from("45"),
                                                  String::from("moves"), String::from("h3h4"), String::from("c6g2")))),
                    uci::parse_uci(String::from("position fen 8/B6p/2b1k1p1/5p2/2PK4/6PP/6P1/8 w - - 1 45 moves h3h4 c6g2")));
+    }
+
+    #[test]
+    fn test_parse_uci_for_go_clock_time() {
+        assert_eq!(UciCommand::GoClockTime(vec!["wtime".to_string(), "300000".to_string(), "btime".to_string(), "300000".to_string(), "winc".to_string(), "0".to_string(), "binc".to_string(), "0".to_string()]), 
+                   uci::parse_uci(String::from("go wtime 300000 btime 300000 winc 0 binc 0")).unwrap());
     }
 
     #[test]

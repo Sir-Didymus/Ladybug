@@ -1,5 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 use crate::board::Board;
+use crate::board::color::Color;
 use crate::move_gen::ply::Ply;
 use crate::search::SearchCommand;
 use crate::uci;
@@ -82,6 +83,7 @@ impl Ladybug {
                         UciCommand::Uci => self.handle_uci(),
                         UciCommand::IsReady => self.handle_is_ready(),
                         UciCommand::Position(args) => self.handle_position(args),
+                        UciCommand::GoClockTime(args) => self.handle_go_clock_time(args),
                         UciCommand::GoPerft(depth) => self.handle_go_perft(depth),
                         UciCommand::Quit => {
                             self.handle_quit();
@@ -195,6 +197,35 @@ impl Ladybug {
         self.board = board;
     }
 
+    /// Handles the "go wtime <time> btime <time>" command
+    fn handle_go_clock_time(&self, args: Vec<String>) {
+        if args.len() != 8 {
+            self.send_console(String::from("info string unknown command"));
+            return;
+        }
+        if args[0] != "wtime" || args[2] != "btime" || args[4] != "winc" || args[6] != "binc" {
+            self.send_console(String::from("info string unknown command"));
+            return;
+        }
+        
+        let w_time = args[1].parse::<u64>();
+        let b_time = args[3].parse::<u64>();
+        let w_inc = args[5].parse::<u64>();
+        let b_inc = args[7].parse::<u64>();
+        
+        if w_time.is_err() || b_time.is_err() || w_inc.is_err() || b_inc.is_err() {
+            self.send_console(String::from("info string unknown command"));
+            return;
+        }
+        
+        let time =  match self.board.position.color_to_move{
+            Color::White => w_time.unwrap(),
+            Color::Black => b_time.unwrap(),
+        };
+        
+        self.send_search(SearchCommand::SearchTime(self.board.position, time / 40))
+    }
+
     /// Handles the "go perft <depth>" command
     fn handle_go_perft(&self, depth_str: String) {
         let depth = depth_str.parse::<u64>();
@@ -203,7 +234,7 @@ impl Ladybug {
                 self.send_console(String::from("info string unknown command"));
             }
             Ok(depth) => {
-                self.send_search(SearchCommand::Perft((self.board.position, depth)));
+                self.send_search(SearchCommand::Perft(self.board.position, depth));
             }
         }
     }
@@ -334,6 +365,15 @@ mod tests {
         let _ = input_sender.send(ConsoleMessage(String::from("position fen r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/2P5/PP3PPP/RNBQKBNR b KQkq d3 0 3 moves c5d4 h2h4 d4c3 g1f3 c3b2 f1b5 b2c1q")));
         let _ = input_sender.send(ConsoleMessage(String::from("display")));
         assert_eq!("r1bqkbnr/pp1ppppp/2n5/1B6/4P2P/5N2/P4PP1/RNqQK2R w KQkq - 0 7", output_receiver.recv().unwrap());
+    }
+
+    #[test]
+    fn test_ladybug_for_go_clock_time() {
+        let (input_sender, output_receiver) = setup();
+
+        let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
+        let _ = input_sender.send(ConsoleMessage(String::from("go wtime 10 btime 10 winc 0 binc 0")));
+        assert!(output_receiver.recv().unwrap().contains("bestmove"));
     }
 
     #[test]

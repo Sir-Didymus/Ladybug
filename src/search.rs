@@ -1,13 +1,19 @@
 use std::sync::mpsc::{Receiver, Sender};
+use std::thread;
+use std::time::Duration;
 use crate::board::position::Position;
 use crate::ladybug::Message;
+use crate::move_gen::generates_moves;
+use rand::Rng;
 
 pub mod perft;
 
 /// Encodes the commands the search can receive from Ladybug.
 pub enum SearchCommand {
+    /// Search the given position for the given amount of milliseconds.
+    SearchTime(Position, u64),
     /// Perform a perft for the given position up to the specified depth.
-    Perft((Position, u64)),
+    Perft(Position, u64),
     /// Stop the search immediately.
     Stop,
 }
@@ -44,7 +50,8 @@ impl Search {
             let command = input.unwrap();
             
             match command { 
-                SearchCommand::Perft((position, depth)) => self.handle_perft(position, depth),
+                SearchCommand::Perft(position, depth) => self.handle_perft(position, depth),
+                SearchCommand::SearchTime(position, time) => self.handle_search_time(position, time),
                 _other => {},
             }
         }
@@ -60,7 +67,15 @@ impl Search {
         }
     }
     
-    /// Handles the perft command.
+    /// Handles the "SearchTime" command.
+    fn handle_search_time(&self, position: Position, time: u64) {
+        let moves = generates_moves(position);
+        thread::sleep(Duration::from_millis(time / 2));
+        let move_index = rand::thread_rng().gen_range(0..moves.len());
+        self.send_output(format!("bestmove {}", moves[move_index]))
+    }
+    
+    /// Handles the "Perft" command.
     fn handle_perft(&self, position: Position, depth: u64) {
         self.perft(position, depth);
     }
