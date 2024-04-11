@@ -1,6 +1,4 @@
 use std::sync::mpsc::{Receiver, Sender};
-use std::thread;
-use std::time::Duration;
 use crate::board::position::Position;
 use crate::ladybug::Message;
 use crate::move_gen::generates_moves;
@@ -66,7 +64,7 @@ impl Search {
             panic!("The main thread has unexpectedly closed the channel connection.")
         }
     }
-    
+
     /// Handles the "SearchTime" command.
     fn handle_search_time(&self, position: Position, time: u64) {
         let moves = generates_moves(position);
@@ -74,7 +72,7 @@ impl Search {
             self.send_output(String::from("info string no legal moves"));
             return;
         }
-        thread::sleep(Duration::from_millis(time / 2));
+        //thread::sleep(Duration::from_millis(time / 2));
         let move_index = rand::thread_rng().gen_range(0..moves.len());
         self.send_output(format!("bestmove {}", moves[move_index]))
     }
