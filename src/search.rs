@@ -70,6 +70,10 @@ impl Search {
     /// Handles the "SearchTime" command.
     fn handle_search_time(&self, position: Position, time: u64) {
         let moves = generates_moves(position);
+        if moves.is_empty() {
+            self.send_output(String::from("info string no legal moves"));
+            return;
+        }
         thread::sleep(Duration::from_millis(time / 2));
         let move_index = rand::thread_rng().gen_range(0..moves.len());
         self.send_output(format!("bestmove {}", moves[move_index]))
