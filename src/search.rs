@@ -33,7 +33,7 @@ impl Search {
 
             // if the main thread closes the connection, the search thread must not continue running
             if input.is_err() {
-                panic!("The main thread has unexpectedly closed the channel connection.")
+                return;
             }
 
             // get the input string from the result
@@ -42,6 +42,16 @@ impl Search {
             //match command {
             //    Perft(depth) => 
            // }
+        }
+    }
+
+    /// Sends the given String to the main thread.
+    fn send_output(&self, output: String) {
+        let send_result = self.output_sender.send(output);
+
+        // if the main thread closes the connection, the search thread must not continue running
+        if send_result.is_err() {
+            panic!("The main thread has unexpectedly closed the channel connection.")
         }
     }
     

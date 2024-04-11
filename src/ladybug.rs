@@ -1,7 +1,7 @@
 use std::sync::mpsc::{Receiver, Sender};
 use crate::board::Board;
-use crate::move_gen::perft::perft;
 use crate::move_gen::ply::Ply;
+use crate::search::SearchCommand;
 use crate::uci;
 use crate::uci::{UciCommand};
 
@@ -12,6 +12,8 @@ pub struct Ladybug {
     board: Board,
     /// The current state of Ladybug.
     state: State,
+    /// Used to send commands to the search thread.
+    search_command_sender: Sender<SearchCommand>,
     /// Used to send output to the console.
     console_output_sender: Sender<String>,
     /// Used to receive input from both the console and the search thread.
@@ -26,10 +28,11 @@ enum State {
 
 impl Ladybug {
     /// Constructs Ladybug.
-    pub fn new(console_output_sender: Sender<String>, input_receiver: Receiver<String>) -> Self {
+    pub fn new(search_command_sender: Sender<SearchCommand>, console_output_sender: Sender<String>, input_receiver: Receiver<String>) -> Self {
         Self {
             board: Board::default(),
             state: State::Idle,
+            search_command_sender,
             console_output_sender,
             input_receiver
         }
@@ -175,7 +178,7 @@ impl Ladybug {
                 self.send_output(String::from("info string unknown command"));
             }
             Ok(depth) => {
-                perft(self.board.position, depth);
+                //perft(self.board.position, depth);
             }
         }
     }
@@ -210,18 +213,28 @@ mod tests {
     use crate::ladybug::Ladybug;
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
+    use crate::search::{Search, SearchCommand};
 
     /// Creates a new Ladybug thread and returns the input_sender and output_receiver.
     fn setup() -> (Sender<String>, Receiver<String>) {
         initialize_lookup_table();
+
+        // create search_command_sender and search_command_receiver so that the ladybug thread can send commands to the search thread
+        let (search_command_sender, search_command_receiver): (Sender<SearchCommand>, Receiver<SearchCommand>) = mpsc::channel();
 
         // create input_sender and input_receiver so that the input thread can send input to the ladybug thread
         let (input_sender, input_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
 
         // create output_sender and output_receiver so that the ladybug thread can send output to the output thread.
         let (output_sender, output_receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
+        
+        // initialize the search
+        let mut search = Search::new(search_command_receiver, input_sender.clone());
+        
+        // spawn the search thread
+        thread::spawn(move || search.run());
 
-        let mut ladybug = Ladybug::new(output_sender.clone(), input_receiver);
+        let mut ladybug = Ladybug::new(search_command_sender, output_sender.clone(), input_receiver);
 
         // spawn the Ladybug thread
         thread::spawn(move || ladybug.run());
