@@ -1,5 +1,7 @@
 use std::sync::mpsc::{Receiver, Sender};
 
+pub mod perft;
+
 /// Encodes the commands the search can receive from Ladybug.
 pub enum SearchCommand {
     /// Perform a perft test up to the specified depth.

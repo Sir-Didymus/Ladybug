@@ -242,7 +242,7 @@ mod tests {
         (input_sender, output_receiver)
     }
 
-    // helper function to initialize the lookup table
+    /// helper function to initialize the lookup table
     fn initialize_lookup_table() {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();

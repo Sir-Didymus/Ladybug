@@ -7,7 +7,6 @@ use crate::move_gen::ply::Ply;
 use crate::move_gen::slider_moves::generate_slider_moves;
 
 pub mod ply;
-pub mod perft;
 mod pawn_moves;
 mod slider_moves;
 mod leaper_moves;

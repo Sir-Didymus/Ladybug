@@ -61,7 +61,7 @@ mod tests {
     use crate::board::Board;
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
-    use crate::move_gen::perft::perft;
+    use crate::search::perft::perft;
 
     // helper function to initialize the lookup table
     fn initialize_lookup_table() {
