@@ -3,9 +3,11 @@ use crate::board::piece::{NUM_PIECES, Piece};
 use crate::board::position::Position;
 
 /// The values for each piece type.
-pub const PIECE_VALUES: [i32; 6] = [100, 300, 300, 500, 900, INFINITY];
+pub const PIECE_VALUES: [i32; 6] = [100, 300, 300, 500, 900, POSITIVE_INFINITY];
 /// The highest possible value.
-pub const INFINITY: i32 = i32::MAX;
+pub const POSITIVE_INFINITY: i32 = i32::MAX - 1;
+/// The lowest possible value.
+pub const NEGATIVE_INFINITY: i32 = i32::MIN + 1;
 
 
 /// Returns the static evaluation for the given position.
