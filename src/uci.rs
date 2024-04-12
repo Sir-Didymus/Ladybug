@@ -5,6 +5,7 @@ pub enum UciCommand {
     IsReady,
     Position(Vec<String>),
     GoClockTime(Vec<String>),
+    GoDepth(String),
     GoPerft(String),
     Quit,
     Help,
@@ -36,6 +37,14 @@ pub fn parse_uci(input: String) -> Result<UciCommand, String> {
                 Err(String::from("info string unknown command"))
             } else {
                 match uci_parts[1].as_str() {
+                    "depth" => {
+                        if uci_parts.len() != 3 {
+                            Err(String::from("info string unknown command"))
+                        }
+                        else {
+                            Ok(UciCommand::GoDepth(uci_parts[2].clone()))
+                        }
+                    }
                     "perft" => {
                         if uci_parts.len() != 3 {
                             Err(String::from("info string unknown command"))
@@ -97,6 +106,13 @@ mod tests {
                    uci::parse_uci(String::from("go wtime 300000 btime 300000 winc 0 binc 0")).unwrap());
     }
 
+    #[test]
+    fn test_parse_uci_for_go_depth() {
+        assert_eq!(Err("info string unknown command".to_string()), uci::parse_uci(String::from("go depth")));
+        assert_eq!(UciCommand::GoDepth("5".to_string()), uci::parse_uci(String::from("go depth 5")).unwrap());
+        assert_eq!(UciCommand::GoDepth("10".to_string()), uci::parse_uci(String::from("go depth 10")).unwrap());
+    }
+    
     #[test]
     fn test_parse_uci_for_go_perft() {
         assert_eq!(Err(String::from("info string unknown command")), uci::parse_uci(String::from("go perft")));

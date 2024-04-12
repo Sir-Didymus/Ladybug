@@ -84,6 +84,7 @@ impl Ladybug {
                         UciCommand::IsReady => self.handle_is_ready(),
                         UciCommand::Position(args) => self.handle_position(args),
                         UciCommand::GoClockTime(args) => self.handle_go_clock_time(args),
+                        UciCommand::GoDepth(depth) => self.handle_depth(depth),
                         UciCommand::GoPerft(depth) => self.handle_go_perft(depth),
                         UciCommand::Quit => {
                             self.handle_quit();
@@ -197,7 +198,7 @@ impl Ladybug {
         self.board = board;
     }
 
-    /// Handles the "go wtime <time> btime <time>" command
+    /// Handles the "go wtime <time> btime <time>" command.
     fn handle_go_clock_time(&self, args: Vec<String>) {
         if args.len() != 8 {
             self.send_console(String::from("info string unknown command"));
@@ -225,8 +226,21 @@ impl Ladybug {
         
         self.send_search(SearchCommand::SearchTime(self.board.position, time / 40))
     }
+    
+    /// Handles the "go depth <depth>" command.
+    fn handle_depth(&self, depth_str: String) {
+        let depth = depth_str.parse::<u64>();
+        match depth {
+            Err(_) => {
+                self.send_console(String::from("info string unknown command"));
+            }
+            Ok(depth) => {
+                self.send_search(SearchCommand::SearchDepth(self.board.position, depth));
+            }
+        }
+    }
 
-    /// Handles the "go perft <depth>" command
+    /// Handles the "go perft <depth>" command.
     fn handle_go_perft(&self, depth_str: String) {
         let depth = depth_str.parse::<u64>();
         match depth {
@@ -252,6 +266,7 @@ impl Ladybug {
         self.send_console(String::from("isready                                                 : Synchronize Ladybug with the GUI"));
         self.send_console(String::from("position fen <fen> moves <moves>                        : Setup the board position"));
         self.send_console(String::from("go wtime <time> btime <time> winc <time> binc <time>    : Start searching"));
+        self.send_console(String::from("go depth <depth>                                        : Search to the specified depth"));
         self.send_console(String::from("go perft <depth>                                        : Perform a perft test"));
         self.send_console(String::from("quit                                                    : Quit Ladybug"));
         self.send_console(String::from("display                                                 : Print the fen of the current position"));
@@ -378,6 +393,15 @@ mod tests {
     }
 
     #[test]
+    fn test_ladybug_for_go_depth() {
+        let (input_sender, output_receiver) = setup();
+
+        let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
+        let _ = input_sender.send(ConsoleMessage(String::from("go depth 1")));
+        assert!(output_receiver.recv().unwrap().contains("bestmove"));
+    }
+
+    #[test]
     fn test_ladybug_for_go_perft() {
         let (input_sender, output_receiver) = setup();
 
@@ -407,6 +431,7 @@ mod tests {
         assert_eq!("isready                                                 : Synchronize Ladybug with the GUI", output_receiver.recv().unwrap());
         assert_eq!("position fen <fen> moves <moves>                        : Setup the board position", output_receiver.recv().unwrap());
         assert_eq!("go wtime <time> btime <time> winc <time> binc <time>    : Start searching", output_receiver.recv().unwrap());
+        assert_eq!("go depth <depth>                                        : Search to the specified depth", output_receiver.recv().unwrap());
         assert_eq!("go perft <depth>                                        : Perform a perft test", output_receiver.recv().unwrap());
         assert_eq!("quit                                                    : Quit Ladybug", output_receiver.recv().unwrap());
         assert_eq!("display                                                 : Print the fen of the current position", output_receiver.recv().unwrap());

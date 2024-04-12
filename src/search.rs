@@ -1,6 +1,7 @@
 use std::sync::mpsc::{Receiver, Sender};
 use crate::board::position::Position;
 use crate::ladybug::Message;
+use crate::move_gen;
 use crate::move_gen::generates_moves;
 use crate::move_gen::ply::Ply;
 
@@ -11,6 +12,8 @@ pub mod negamax;
 pub enum SearchCommand {
     /// Search the given position for the given amount of milliseconds.
     SearchTime(Position, u64),
+    /// Search the given position until the given depth is reached.
+    SearchDepth(Position, u64),
     /// Perform a perft for the given position up to the specified depth.
     Perft(Position, u64),
     /// Stop the search immediately.
@@ -56,7 +59,8 @@ impl Search {
             
             match command { 
                 SearchCommand::Perft(position, depth) => self.handle_perft(position, depth),
-                SearchCommand::SearchTime(position, time) => self.handle_search_time(position, time),
+                SearchCommand::SearchTime(position, time) => self.handle_search(position, Some(time), None),
+                SearchCommand::SearchDepth(position, depth) => self.handle_search(position, None, Some(depth)),
                 _other => {},
             }
         }
@@ -72,15 +76,26 @@ impl Search {
         }
     }
 
-    /// Handles the "SearchTime" command.
-    fn handle_search_time(&mut self, position: Position, time: u64) {
+    /// Handles the various "Search" commands.
+    fn handle_search(&mut self, position: Position, time: Option<u64>, depth: Option<u64>) {
         let moves = generates_moves(position);
         if moves.is_empty() {
             self.send_output(String::from("info string no legal moves"));
             return;
         }
-        self.negamax(position, 1, 0);
-        self.send_output(format!("bestmove {}",self.best_move.unwrap()));
+        match depth {
+            Some(depth) => self.negamax(position, depth, 0),
+            None => self.negamax(position, 1, 0),
+        };
+        
+        match self.best_move {
+            // if the search couldn't find a move, return the first legal one
+            None => self.send_output(format!("bestmove {}", move_gen::generates_moves(position)[0])),
+            // send the best move to the main thread
+            Some(best_move) => self.send_output(format!("bestmove {}", best_move)),
+        }
+        
+        // reset the best move
         self.best_move = None;
     }
     
