@@ -2,9 +2,10 @@ use std::sync::mpsc::{Receiver, Sender};
 use crate::board::position::Position;
 use crate::ladybug::Message;
 use crate::move_gen::generates_moves;
-use rand::Rng;
+use crate::move_gen::ply::Ply;
 
 pub mod perft;
+pub mod negamax;
 
 /// Encodes the commands the search can receive from Ladybug.
 pub enum SearchCommand {
@@ -22,6 +23,10 @@ pub struct Search {
     command_receiver: Receiver<SearchCommand>,
     /// Used to send search results to Ladybug.
     message_sender: Sender<Message>,
+    /// The number of nodes traversed during the search.
+    node_count: u64,
+    /// The best move found during search.
+    best_move: Option<Ply>,
 }
 
 impl Search {
@@ -30,6 +35,8 @@ impl Search {
         Self {
             command_receiver: input_receiver,
             message_sender: output_sender,
+            node_count: 0,
+            best_move: None,
         }
     }
 
@@ -66,15 +73,15 @@ impl Search {
     }
 
     /// Handles the "SearchTime" command.
-    fn handle_search_time(&self, position: Position, time: u64) {
+    fn handle_search_time(&mut self, position: Position, time: u64) {
         let moves = generates_moves(position);
         if moves.is_empty() {
             self.send_output(String::from("info string no legal moves"));
             return;
         }
-        //thread::sleep(Duration::from_millis(time / 2));
-        let move_index = rand::thread_rng().gen_range(0..moves.len());
-        self.send_output(format!("bestmove {}", moves[move_index]))
+        self.negamax(position, 1, 0);
+        self.send_output(format!("bestmove {}",self.best_move.unwrap()));
+        self.best_move = None;
     }
     
     /// Handles the "Perft" command.
