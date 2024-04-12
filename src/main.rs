@@ -34,16 +34,16 @@ fn main() {
     let message_sender_copy = message_sender.clone();
     
     // spawn the input thread
-    thread::spawn(move || read_input(message_sender_copy));
+    let _ = thread::Builder::new().name("console_in".to_string()).spawn(move || read_input(message_sender_copy));
 
     // spawn the output thread
-    thread::spawn(move || write_output(output_receiver));
+    let _ = thread::Builder::new().name("console_out".to_string()).spawn(move || write_output(output_receiver));
     
     // initialize the search
     let mut search = Search::new(search_command_receiver, message_sender);
     
     // spawn the search thread
-    thread::spawn(move || search.run());
+    let _ = thread::Builder::new().name("search".to_string()).spawn(move || search.run());
 
     // initialize Ladybug
     let mut ladybug = Ladybug::new(search_command_sender, output_sender, message_receiver);
