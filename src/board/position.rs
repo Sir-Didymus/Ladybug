@@ -295,6 +295,11 @@ impl Position {
             self.attack_bb[color_index as usize] = attack_bb;
         }
     }
+    
+    /// Returns the number of pieces of the given type and color.
+    pub fn get_num_pieces(&self, piece: Piece, color: Color) -> u8 {
+        self.pieces[color.to_index() as usize][piece.to_index() as usize].get_num_active_bits()
+    }
 }
 
 /// Prints the position with '.' marking empty squares, capital letters marking white pieces,
@@ -1068,5 +1073,40 @@ mod tests {
         });
         println!("{position}");
         assert_eq!(Board::from_fen("r1b1kbnr/1pp3pp/p1n5/4Bp2/2P4q/1P2PP2/P2P2PP/RN1QKB1R b KQkq - 1 8").unwrap().position, position);
+    }
+    
+    #[test]
+    fn test_get_num_pieces() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        assert_eq!(8, position.get_num_pieces(Piece::Pawn, Color::White));
+        assert_eq!(8, position.get_num_pieces(Piece::Pawn, Color::Black));
+        assert_eq!(2, position.get_num_pieces(Piece::Knight, Color::White));
+        assert_eq!(2, position.get_num_pieces(Piece::Knight, Color::Black));
+        assert_eq!(2, position.get_num_pieces(Piece::Bishop, Color::White));
+        assert_eq!(2, position.get_num_pieces(Piece::Bishop, Color::Black));
+        assert_eq!(2, position.get_num_pieces(Piece::Rook, Color::White));
+        assert_eq!(2, position.get_num_pieces(Piece::Rook, Color::Black));
+        assert_eq!(1, position.get_num_pieces(Piece::Queen, Color::White));
+        assert_eq!(1, position.get_num_pieces(Piece::Queen, Color::Black));
+        assert_eq!(1, position.get_num_pieces(Piece::King, Color::White));
+        assert_eq!(1, position.get_num_pieces(Piece::King, Color::Black));
+
+        let position = Board::from_fen("4nrk1/5pp1/2p3bp/2N1p3/4P1P1/2N1P2P/2P4K/4R3 b - - 0 27").unwrap().position;
+        assert_eq!(5, position.get_num_pieces(Piece::Pawn, Color::White));
+        assert_eq!(5, position.get_num_pieces(Piece::Pawn, Color::Black));
+        assert_eq!(2, position.get_num_pieces(Piece::Knight, Color::White));
+        assert_eq!(1, position.get_num_pieces(Piece::Knight, Color::Black));
+        assert_eq!(0, position.get_num_pieces(Piece::Bishop, Color::White));
+        assert_eq!(1, position.get_num_pieces(Piece::Bishop, Color::Black));
+        assert_eq!(1, position.get_num_pieces(Piece::Rook, Color::White));
+        assert_eq!(1, position.get_num_pieces(Piece::Rook, Color::Black));
+        assert_eq!(0, position.get_num_pieces(Piece::Queen, Color::White));
+        assert_eq!(0, position.get_num_pieces(Piece::Queen, Color::Black));
+        assert_eq!(1, position.get_num_pieces(Piece::King, Color::White));
+        assert_eq!(1, position.get_num_pieces(Piece::King, Color::Black));
     }
 }
