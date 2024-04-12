@@ -17,7 +17,11 @@ impl Search {
         // if there are no legal moves, check for mate or stalemate
         if moves.is_empty() {
             return if position.is_in_check(position.color_to_move) {
-                evaluation::NEGATIVE_INFINITY
+                // In case of checkmate, return a large negative number.
+                // By adding a large number (larger than the worth of a queen) for each ply in the search tree, 
+                // and thus decreasing the penalty for getting checkmated, the engine is incentivised to sacrifice material in order to delay checkmate.
+                // It will also prefer shorter mates when being on the winning side.
+                evaluation::NEGATIVE_INFINITY + (ply_num as i32 * 5000)
             } else {
                 0
             }
