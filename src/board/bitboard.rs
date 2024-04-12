@@ -54,6 +54,18 @@ impl Bitboard {
         }
         active_bits
     }
+    
+    /// Returns the number of active bits.
+    /// Implemented using Brian Kernighan's algorithm.
+    pub fn get_num_active_bits(&self) -> u8 {
+        let mut active_bits = 0;
+        let mut bb_value = self.value;
+        while bb_value > 0 {
+            active_bits += 1;
+            bb_value &= bb_value - 1;
+        }
+        active_bits
+    }
 }
 
 /// Prints the bitboard with '.' marking empty squares and 'X' marking occupied squares.
@@ -190,6 +202,13 @@ mod tests {
         assert_eq!(square::F7, active_bits[3]);
         assert_eq!(square::G7, active_bits[4]);
         assert_eq!(square::B8, active_bits[5]);
+    }
+    
+    #[test]
+    fn get_num_active_bits_returns_number_of_active_bits() {
+        assert_eq!(0, Bitboard::new(0).get_num_active_bits());
+        assert_eq!(64, Bitboard::new(0xffffffffffffffff).get_num_active_bits());
+        assert_eq!(6, Bitboard::new(0x220000210008001).get_num_active_bits());
     }
 
     #[test]
