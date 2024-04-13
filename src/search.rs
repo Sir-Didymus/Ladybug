@@ -28,8 +28,8 @@ pub struct Search {
     command_receiver: Receiver<SearchCommand>,
     /// Used to send search results to Ladybug.
     message_sender: Sender<Message>,
-    /// The number of nodes traversed during the search.
-    node_count: u64,
+    /// The number of nodes evaluated during the current iteration of the search.
+    node_count: u128,
     /// The current best move found during search.
     best_move: Option<Ply>,
     /// Used to measure the expired time during search.
