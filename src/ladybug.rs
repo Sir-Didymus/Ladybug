@@ -283,6 +283,7 @@ mod tests {
     use std::sync::mpsc;
     use std::sync::mpsc::{Receiver, Sender};
     use std::{thread};
+    use std::time::Duration;
     use crate::ladybug::{Ladybug, Message};
     use crate::ladybug::Message::ConsoleMessage;
     use crate::lookup::LOOKUP_TABLE;
@@ -388,8 +389,21 @@ mod tests {
         let (input_sender, output_receiver) = setup();
 
         let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
-        let _ = input_sender.send(ConsoleMessage(String::from("go wtime 10 btime 10 winc 0 binc 0")));
-        assert!(output_receiver.recv().unwrap().contains("bestmove"));
+        let _ = input_sender.send(ConsoleMessage(String::from("go wtime 100 btime 100 winc 0 binc 0")));
+
+        thread::sleep(Duration::from_millis(100));
+
+        // collect all messages that have accumulated in the channel
+        let mut output: Vec<String> = Vec::new();
+        while let Ok(output_str) = output_receiver.try_recv() {
+            output.push(output_str);
+        }
+        
+        for output_str in &output {
+            println!("{}", output_str)
+        }
+        
+        assert!(output.iter().any(|r| r.contains("bestmove")));
     }
 
     #[test]

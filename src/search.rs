@@ -1,4 +1,5 @@
 use std::sync::mpsc::{Receiver, Sender};
+use std::time::{Duration, Instant};
 use crate::board::position::Position;
 use crate::ladybug::Message;
 use crate::move_gen::generates_moves;
@@ -29,6 +30,8 @@ pub struct Search {
     node_count: u64,
     /// The current best move found during search.
     best_move: Option<Ply>,
+    /// Used to measure the expired time during search.
+    instant: Option<Instant>,
 }
 
 impl Search {
@@ -39,6 +42,7 @@ impl Search {
             message_sender: output_sender,
             node_count: 0,
             best_move: None,
+            instant: None,
         }
     }
 
@@ -58,8 +62,8 @@ impl Search {
             
             match command { 
                 SearchCommand::Perft(position, depth) => self.handle_perft(position, depth),
-                SearchCommand::SearchTime(position, time) => self.handle_search(position, Some(time), None),
-                SearchCommand::SearchDepth(position, depth) => self.handle_search(position, None, Some(depth)),
+                SearchCommand::SearchTime(position, time) => self.handle_search(position, None, Some(time)),
+                SearchCommand::SearchDepth(position, depth) => self.handle_search(position, Some(depth), None),
                 _other => {},
             }
         }
@@ -76,16 +80,24 @@ impl Search {
     }
 
     /// Handles the various "Search" commands.
-    fn handle_search(&mut self, position: Position, time: Option<u64>, depth: Option<u64>) {
+    fn handle_search(&mut self, position: Position, depth_limit: Option<u64>, time_limit: Option<u64>) {
         let moves = generates_moves(position);
         if moves.is_empty() {
             self.send_output(String::from("info string no legal moves"));
             return;
         }
-        match depth {
-            Some(depth) => self.iterative_search(position, depth),
-            None => self.iterative_search(position, 1),
+
+        // check if a depth value was provided, if not, use a default depth limit of 100
+        let depth_limit = depth_limit.unwrap_or(100);
+        
+        // check if a time limit was provided
+        let time_limit = match time_limit {
+            // if no time limit ws provided, use a default limit of 72 hours
+            None => Duration::from_secs(72 * 60 * 60),
+            Some(time) => Duration::from_millis(time),
         };
+        
+        self.iterative_search(position, depth_limit, time_limit);
     }
     
     /// Handles the "Perft" command.

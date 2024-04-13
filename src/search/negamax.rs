@@ -1,18 +1,26 @@
+use std::time::Duration;
 use crate::board::position::Position;
 use crate::{evaluation, move_gen};
 use crate::search::Search;
 
 impl Search {
     /// Search the given position with iterative deepening.
-    pub fn iterative_search(&mut self, position: Position, max_depth: u64) {
+    pub fn iterative_search(&mut self, position: Position, max_depth: u64, time_limit: Duration) {
         // initialize the best move with a random one, in case the search is stopped immediately
         let mut prev_best_move = move_gen::generates_moves(position)[0];
 
+        // start the timer
+        self.instant = Some(std::time::Instant::now());
+
         for depth in 1..=max_depth {
-            self.negamax(position, depth, 0);
+            self.negamax(position, depth, 0, time_limit);
 
             match self.best_move {
-                None => break, // the search was stopped before it could complete
+                None => {
+                    // the search was stopped before it could complete
+                    self.send_output(format!("info string cancelled search at depth {depth}"));
+                    break
+                }
                 Some(best_move) => {
                     // set the best move of the previous iteration to the new best move
                     prev_best_move = best_move;
@@ -28,7 +36,16 @@ impl Search {
     ///
     /// Instead of implementing two routines for the maximizing and minimizing players, this method
     /// negates the scores for each recursive call, making minimax easier to implement.
-    pub fn negamax(&mut self, position: Position, depth: u64, ply_num: u64) -> i32 {
+    pub fn negamax(&mut self, position: Position, depth: u64, ply_num: u64, time_limit: Duration) -> i32 {
+        // check if the time limit has expired
+        if let Some(instant) = self.instant {
+            if instant.elapsed() > time_limit {
+                // reset the best move of this search to let the caller know that the search was cancelled prematurely
+                self.best_move = None;
+                return 0;
+            }
+        }
+
         // the maximum score that can be reached in this position
         let mut max_score = evaluation::NEGATIVE_INFINITY;
 
@@ -56,7 +73,7 @@ impl Search {
         // make all moves and call negamax recursively for the arising positions
         for ply in moves {
             // the score of the position arising after playing the move
-            let score = -self.negamax(position.make_move(ply), depth - 1, ply_num + 1);
+            let score = -self.negamax(position.make_move(ply), depth - 1, ply_num + 1, time_limit);
             // check if the score of the position is better than the current max score
             if score > max_score {
                 // update the max score
