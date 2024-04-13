@@ -1,61 +1,70 @@
 use std::time::Duration;
 use crate::board::position::Position;
 use crate::{evaluation, move_gen};
-use crate::search::Search;
+use crate::move_gen::ply::Ply;
+use crate::search::{MAX_PLY, Search};
 
 impl Search {
     /// Search the given position with iterative deepening.
     pub fn iterative_search(&mut self, position: Position, max_depth: u64, time_limit: Duration) {
-        // initialize the best move with a random one, in case the search is stopped immediately
-        let mut prev_best_move = move_gen::generates_moves(position)[0];
+        // reset the stop flag to allow searching
+        self.stop = false;
 
         // start the timer
         self.instant = Some(std::time::Instant::now());
-        
+
+        // initialize the best move with a random one, in case the search stops prematurely
+        let mut best_move = move_gen::generates_moves(position)[0];
+
         // the total number of nodes searched
         let mut nodes_total: u128 = 0;
 
+        // start at depth 1 and increment the depth until the max depth is reached or the time runs out
         for depth in 1..=max_depth {
+            // search to the current depth and save the score
             let score = self.negamax(position, depth, 0, time_limit);
 
-            match self.best_move {
-                None => {
-                    // the search was stopped before it could complete
-                    self.send_output(format!("info string cancelled search at depth {depth}"));
-                    break
-                }
-                Some(best_move) => {
-                    // calculate nodes per second
-                    nodes_total += self.node_count;
-                    let mut nps: u128 = 0;
-                    if let Some(instant) = self.instant {  
-                        let time_elapsed = instant.elapsed().as_millis();
-                        if time_elapsed > 0 {
-                            nps = (nodes_total / time_elapsed) * 1000;
-                        }
-                    }
-                    
-                    // send the information for the current iteration
-                    let mut output = format!("info depth {depth} score cp {score} nodes {nodes} nps {nps} pv", nodes = self.node_count);
-                    for ply_num in 0..self.pv_length[0] {
-                        output += format!(" {}", self.pv_table[0][ply_num as usize]).as_str();
-                    }
-                    self.send_output(output);
-                    
-                    // set the best move of the previous iteration to the new best move
-                    prev_best_move = best_move;
-                    self.best_move = None;
+            if self.stop {
+                // if the stop flag is set, break out of iterative deepening immediately
+                break;
+            }
+
+            // calculate nodes per second
+            nodes_total += self.node_count;
+            let mut nps: u128 = 0;
+            if let Some(instant) = self.instant {
+                let time_elapsed = instant.elapsed().as_millis();
+                if time_elapsed > 0 {
+                    nps = (nodes_total / time_elapsed) * 1000;
                 }
             }
+
+            // send the information for the current iteration
+            let mut output = format!("info depth {depth} score cp {score} nodes {nodes} nps {nps} pv", nodes = self.node_count);
+            for ply_num in 0..self.pv_length[0] {
+                output += format!(" {}", self.pv_table[0][ply_num as usize]).as_str();
+            }
+            self.send_output(output);
+
+            // set the best move to the result of this iteration
+            best_move = self.pv_table[0][0];
 
             // reset the node_count
             self.node_count = 0;
         }
 
+        // send the best move to the main thread
+        self.send_output(format!("bestmove {}", best_move));
+
         // reset the timer
         self.instant = None;
 
-        self.send_output(format!("bestmove {}", prev_best_move));
+        // reset the node count
+        self.node_count = 0;
+
+        // reset the pv length and pv table arrays
+        self.pv_length = [0; MAX_PLY];
+        self.pv_table = [[Ply::default(); MAX_PLY]; MAX_PLY];
     }
 
     /// A basic implementation of the [negamax](https://www.chessprogramming.org/Negamax) algorithm.
@@ -63,17 +72,23 @@ impl Search {
     /// Instead of implementing two routines for the maximizing and minimizing players, this method
     /// negates the scores for each recursive call, making minimax easier to implement.
     pub fn negamax(&mut self, position: Position, depth: u64, ply_index: u64, time_limit: Duration) -> i32 {
-        // initialize the pv length
-        self.pv_length[ply_index as usize] = ply_index as u8;
+        // check if the max ply number is reached
+        if ply_index as usize >= MAX_PLY {
+            // the maximum number of plies is reached - return static evaluation to avoid overflows
+            return evaluation::evaluate(position);
+        }
 
-        // check if the time limit has expired
+        // check if the time limit is reached
         if let Some(instant) = self.instant {
             if instant.elapsed() > time_limit {
-                // reset the best move of this search to let the caller know that the search was cancelled prematurely
-                self.best_move = None;
+                // the time limit is reached - break out of recursion immediately
+                self.stop = true;
                 return 0;
             }
         }
+
+        // initialize the pv length
+        self.pv_length[ply_index as usize] = ply_index as u8;
 
         // the maximum score that can be reached in this position
         let mut max_score = evaluation::NEGATIVE_INFINITY;
@@ -100,11 +115,12 @@ impl Search {
             self.node_count += 1;
             return evaluation::evaluate(position);
         }
-        
-        // make all moves and call negamax recursively for the arising positions
+
+        // iterate over all possible moves and call negamax recursively for the arising positions
         for ply in moves {
-            // the score of the position arising after playing the move
+            // the score of the new position
             let score = -self.negamax(position.make_move(ply), depth - 1, ply_index + 1, time_limit);
+
             // check if the score of the position is better than the current max score
             if score > max_score {
                 // update the max score
@@ -113,16 +129,12 @@ impl Search {
                 // --------------------
                 // update the pv table
                 // --------------------
+
                 self.pv_table[ply_index as usize][ply_index as usize] = ply;
                 for next_ply_index in (ply_index + 1) as u8..self.pv_length[ply_index as usize + 1] {
                     self.pv_table[ply_index as usize][next_ply_index as usize] = self.pv_table[ply_index as usize + 1][next_ply_index as usize];
                 }
                 self.pv_length[ply_index as usize] = self.pv_length[ply_index as usize + 1];
-
-                // we're at the root node - update the best move
-                if ply_index == 0 {
-                    self.best_move = Some(ply);
-                }
             }
         }
         max_score

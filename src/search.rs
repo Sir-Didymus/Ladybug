@@ -1,14 +1,16 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
-use crate::board::piece::Piece;
 use crate::board::position::Position;
-use crate::board::square;
 use crate::ladybug::Message;
 use crate::move_gen::generates_moves;
 use crate::move_gen::ply::Ply;
 
 pub mod perft;
 pub mod negamax;
+
+/// The maximum number of plies Ladybug is able to search.
+/// This number shouldn't ever be reached.
+pub const MAX_PLY: usize = 100;
 
 /// Encodes the commands the search can receive from Ladybug.
 pub enum SearchCommand {
@@ -30,14 +32,14 @@ pub struct Search {
     message_sender: Sender<Message>,
     /// The number of nodes evaluated during the current iteration of the search.
     node_count: u128,
-    /// The current best move found during search.
-    best_move: Option<Ply>,
     /// Used to measure the expired time during search.
     instant: Option<Instant>,
     /// Stores the lengths of the principe variations.
-    pv_length: [u8; 64],
+    pv_length: [u8; MAX_PLY],
     /// Stores the principle variations.
-    pv_table: [[Ply; 64]; 64],
+    pv_table: [[Ply; MAX_PLY]; MAX_PLY],
+    /// Flag to signal that the search should stop immediately.
+    stop: bool,
 }
 
 impl Search {
@@ -47,17 +49,11 @@ impl Search {
             command_receiver: input_receiver,
             message_sender: output_sender,
             node_count: 0,
-            best_move: None,
             instant: None,
-            pv_length: [0; 64],
+            pv_length: [0; MAX_PLY],
             // initialize the pv table with null moves (a1 to a1)
-            pv_table: [[Ply {
-                source: square::A1,
-                target: square::A1,
-                piece: Piece::Pawn,
-                captured_piece: None,
-                promotion_piece: None,
-            }; 64];64]
+            pv_table: [[Ply::default(); MAX_PLY];MAX_PLY],
+            stop: true,
         }
     }
 
