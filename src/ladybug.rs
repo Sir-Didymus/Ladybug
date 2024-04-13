@@ -82,6 +82,7 @@ impl Ladybug {
                     match uci_command {
                         UciCommand::Uci => self.handle_uci(),
                         UciCommand::IsReady => self.handle_is_ready(),
+                        UciCommand::UciNewGame => self.hande_uci_new_game(),
                         UciCommand::Position(args) => self.handle_position(args),
                         UciCommand::GoClockTime(args) => self.handle_go_clock_time(args),
                         UciCommand::GoDepth(depth) => self.handle_depth(depth),
@@ -130,6 +131,11 @@ impl Ladybug {
         self.send_console(String::from("readyok"));
     }
 
+    /// Handles the "ucinewgame" command.
+    fn hande_uci_new_game(&mut self) {
+        self.board = Board::default();
+    }
+    
     /// Handles the "position" command.
     fn handle_position(&mut self, args: Vec<String>) {
         if args.is_empty() {
@@ -361,6 +367,19 @@ mod tests {
 
         let _ = input_sender.send(ConsoleMessage(String::from("isready")));
         assert_eq!("readyok", output_receiver.recv().unwrap());
+    }
+
+    #[test]
+    fn test_ladybug_for_uci_new_game() {
+        let (input_sender, output_receiver) = setup();
+
+        let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
+        let _ = input_sender.send(ConsoleMessage(String::from("display")));
+        assert_eq!("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", output_receiver.recv().unwrap());
+        
+        let _ = input_sender.send(ConsoleMessage(String::from("ucinewgame")));
+        let _ = input_sender.send(ConsoleMessage(String::from("display")));
+        assert_eq!("8/8/8/8/8/8/8/8 w - - 0 1", output_receiver.recv().unwrap());
     }
 
     #[test]

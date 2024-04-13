@@ -3,6 +3,7 @@
 pub enum UciCommand {
     Uci,
     IsReady,
+    UciNewGame,
     Position(Vec<String>),
     GoClockTime(Vec<String>),
     GoDepth(String),
@@ -26,6 +27,7 @@ pub fn parse_uci(input: String) -> Result<UciCommand, String> {
     match uci_parts[0].as_str() {
         "uci" => Ok(UciCommand::Uci),
         "isready" => Ok(UciCommand::IsReady),
+        "ucinewgame" => Ok(UciCommand::UciNewGame),
         "position" => {
             match uci_parts.len() > 1 {
                 false => Err(String::from("info string unknown command")),
@@ -85,6 +87,11 @@ mod tests {
     #[test]
     fn test_parse_uci_for_isready() {
         assert_eq!(UciCommand::IsReady, uci::parse_uci(String::from("isready")).unwrap());
+    }
+
+    #[test]
+    fn test_parse_uci_for_ucinewgame() {
+        assert_eq!(UciCommand::UciNewGame, uci::parse_uci(String::from("ucinewgame")).unwrap());
     }
 
     #[test]
