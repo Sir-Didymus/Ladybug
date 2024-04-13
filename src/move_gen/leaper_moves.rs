@@ -68,7 +68,7 @@ fn generate_leaper_moves_by_piece(position: Position, piece: Piece) -> Vec<Ply> 
     legal_move_list
 }
 
-/// Generates all legal castling moves the given position.
+/// Generates all legal castling moves for the given position.
 fn generate_castling_moves(position: Position) -> Vec<Ply> {
     let mut move_list: Vec<Ply> = Vec::new();
 
