@@ -6,6 +6,29 @@ use ladybug::lookup::LOOKUP_TABLE;
 use ladybug::lookup::lookup_table::LookupTable;
 use ladybug::search::{Search, SearchCommand};
 
+/// Helper function to assert that the engine returns the expected output after reaching the given depth.
+/// 
+/// This function makes the tests cleaner and easier to read, since we want to discard all the "info depth..." messages and
+/// are only interested in the final result.
+pub fn assert_result(receiver: &Receiver<String>, depth: u8 , expected: &str) {
+    loop {
+        let output = receiver.recv().unwrap();
+        if output.contains(format!("info depth {depth}").as_str()) {
+            assert!(receiver.recv().unwrap().contains(expected));
+            break;
+        }
+    }
+}
+
+pub fn go_position(sender: &Sender<Message>, fen: &str, depth: u8) {
+    let go_command = format!("position fen {fen}");
+    let _ = sender.send(Message::ConsoleMessage(go_command));
+    let _ = sender.send(Message::ConsoleMessage(format!("go depth {depth}")));
+}
+
+/// Helper function to initialize and spawn the main and search threads, just like in the main function, but return the sender and receiver 
+/// to the test function instead of creating dedicated input and output threads. The test thread will act as both input and output thread,
+/// and is thus able to properly test Ladybug's output for various input.
 pub fn setup() -> (Sender<Message>, Receiver<String>) {
     // initialize the lookup table
     let mut lookup = LookupTable::default();

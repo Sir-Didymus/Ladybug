@@ -1,6 +1,8 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
+use crate::board::piece::Piece;
 use crate::board::position::Position;
+use crate::board::square;
 use crate::ladybug::Message;
 use crate::move_gen::generates_moves;
 use crate::move_gen::ply::Ply;
@@ -32,6 +34,10 @@ pub struct Search {
     best_move: Option<Ply>,
     /// Used to measure the expired time during search.
     instant: Option<Instant>,
+    /// Stores the lengths of the principe variations.
+    pv_length: [u8; 64],
+    /// Stores the principle variations.
+    pv_table: [[Ply; 64]; 64],
 }
 
 impl Search {
@@ -43,6 +49,15 @@ impl Search {
             node_count: 0,
             best_move: None,
             instant: None,
+            pv_length: [0; 64],
+            // initialize the pv table with null moves (a1 to a1)
+            pv_table: [[Ply {
+                source: square::A1,
+                target: square::A1,
+                piece: Piece::Pawn,
+                captured_piece: None,
+                promotion_piece: None,
+            }; 64];64]
         }
     }
 
@@ -89,14 +104,14 @@ impl Search {
 
         // check if a depth value was provided, if not, use a default depth limit of 100
         let depth_limit = depth_limit.unwrap_or(100);
-        
+
         // check if a time limit was provided
         let time_limit = match time_limit {
             // if no time limit ws provided, use a default limit of 72 hours
             None => Duration::from_secs(72 * 60 * 60),
             Some(time) => Duration::from_millis(time),
         };
-        
+
         self.iterative_search(position, depth_limit, time_limit);
     }
     

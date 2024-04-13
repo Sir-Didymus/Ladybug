@@ -22,12 +22,22 @@ impl Search {
                     break
                 }
                 Some(best_move) => {
+                    // send the information for the current iteration
+                    let mut output = format!("info depth {depth} pv");
+                    for ply_num in 0..self.pv_length[0] {
+                        output += format!(" {}", self.pv_table[0][ply_num as usize]).as_str();
+                    }
+                    self.send_output(output);
+                    
                     // set the best move of the previous iteration to the new best move
                     prev_best_move = best_move;
                     self.best_move = None;
                 }
             }
         }
+
+        // reset the timer
+        self.instant = None;
 
         self.send_output(format!("bestmove {}", prev_best_move));
     }
@@ -36,7 +46,10 @@ impl Search {
     ///
     /// Instead of implementing two routines for the maximizing and minimizing players, this method
     /// negates the scores for each recursive call, making minimax easier to implement.
-    pub fn negamax(&mut self, position: Position, depth: u64, ply_num: u64, time_limit: Duration) -> i32 {
+    pub fn negamax(&mut self, position: Position, depth: u64, ply_index: u64, time_limit: Duration) -> i32 {
+        // initialize the pv length
+        self.pv_length[ply_index as usize] = ply_index as u8;
+
         // check if the time limit has expired
         if let Some(instant) = self.instant {
             if instant.elapsed() > time_limit {
@@ -59,7 +72,7 @@ impl Search {
                 // By adding a large number (larger than the worth of a queen) for each ply in the search tree, 
                 // and thus decreasing the penalty for getting checkmated, the engine is incentivised to sacrifice material in order to delay checkmate.
                 // It will also prefer shorter mates when being on the winning side.
-                evaluation::NEGATIVE_INFINITY + (ply_num as i32 * 5000)
+                evaluation::NEGATIVE_INFINITY + (ply_index as i32 * 5000)
             } else {
                 0
             };
@@ -73,13 +86,23 @@ impl Search {
         // make all moves and call negamax recursively for the arising positions
         for ply in moves {
             // the score of the position arising after playing the move
-            let score = -self.negamax(position.make_move(ply), depth - 1, ply_num + 1, time_limit);
+            let score = -self.negamax(position.make_move(ply), depth - 1, ply_index + 1, time_limit);
             // check if the score of the position is better than the current max score
             if score > max_score {
                 // update the max score
                 max_score = score;
+                
+                // --------------------
+                // update the pv table
+                // --------------------
+                self.pv_table[ply_index as usize][ply_index as usize] = ply;
+                for next_ply_index in (ply_index + 1) as u8..self.pv_length[ply_index as usize + 1] {
+                    self.pv_table[ply_index as usize][next_ply_index as usize] = self.pv_table[ply_index as usize + 1][next_ply_index as usize];
+                }
+                self.pv_length[ply_index as usize] = self.pv_length[ply_index as usize + 1];
+
                 // we're at the root node - update the best move
-                if ply_num == 0 {
+                if ply_index == 0 {
                     self.best_move = Some(ply);
                 }
             }

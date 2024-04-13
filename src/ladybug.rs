@@ -432,7 +432,14 @@ mod tests {
 
         let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
         let _ = input_sender.send(ConsoleMessage(String::from("go depth 1")));
-        assert!(output_receiver.recv().unwrap().contains("bestmove"));
+
+        loop {
+            let output = output_receiver.recv().unwrap();
+            if output.contains("info depth 1") {
+                assert!(output_receiver.recv().unwrap().contains("bestmove"));
+                break;
+            }
+        }
     }
 
     #[test]
