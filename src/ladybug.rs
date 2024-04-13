@@ -270,6 +270,7 @@ impl Ladybug {
         self.send_console(String::from("Currently, Ladybug only implements a subset of the UCI protocol:"));
         self.send_console(String::from("uci                                                     : Ask Ladybug if she supports UCI"));
         self.send_console(String::from("isready                                                 : Synchronize Ladybug with the GUI"));
+        self.send_console(String::from("ucinewgame                                              : Reset the internal board state"));
         self.send_console(String::from("position fen <fen> moves <moves>                        : Setup the board position"));
         self.send_console(String::from("go wtime <time> btime <time> winc <time> binc <time>    : Start searching"));
         self.send_console(String::from("go depth <depth>                                        : Search to the specified depth"));
@@ -462,6 +463,7 @@ mod tests {
         assert_eq!("Currently, Ladybug only implements a subset of the UCI protocol:", output_receiver.recv().unwrap());
         assert_eq!("uci                                                     : Ask Ladybug if she supports UCI", output_receiver.recv().unwrap());
         assert_eq!("isready                                                 : Synchronize Ladybug with the GUI", output_receiver.recv().unwrap());
+        assert_eq!("ucinewgame                                              : Reset the internal board state", output_receiver.recv().unwrap());
         assert_eq!("position fen <fen> moves <moves>                        : Setup the board position", output_receiver.recv().unwrap());
         assert_eq!("go wtime <time> btime <time> winc <time> binc <time>    : Start searching", output_receiver.recv().unwrap());
         assert_eq!("go depth <depth>                                        : Search to the specified depth", output_receiver.recv().unwrap());
