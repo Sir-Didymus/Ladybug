@@ -1,7 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 use crate::board::position::Position;
 use crate::ladybug::Message;
-use crate::move_gen;
 use crate::move_gen::generates_moves;
 use crate::move_gen::ply::Ply;
 
@@ -28,7 +27,7 @@ pub struct Search {
     message_sender: Sender<Message>,
     /// The number of nodes traversed during the search.
     node_count: u64,
-    /// The best move found during search.
+    /// The current best move found during search.
     best_move: Option<Ply>,
 }
 
@@ -84,19 +83,9 @@ impl Search {
             return;
         }
         match depth {
-            Some(depth) => self.negamax(position, depth, 0),
-            None => self.negamax(position, 1, 0),
+            Some(depth) => self.iterative_search(position, depth),
+            None => self.iterative_search(position, 1),
         };
-        
-        match self.best_move {
-            // if the search couldn't find a move, return the first legal one
-            None => self.send_output(format!("bestmove {}", move_gen::generates_moves(position)[0])),
-            // send the best move to the main thread
-            Some(best_move) => self.send_output(format!("bestmove {}", best_move)),
-        }
-        
-        // reset the best move
-        self.best_move = None;
     }
     
     /// Handles the "Perft" command.
