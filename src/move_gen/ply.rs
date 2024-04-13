@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 use crate::board::color::Color;
 use crate::board::piece::Piece;
 use crate::board::position::Position;
+use crate::board::square;
 use crate::board::square::Square;
 use crate::move_gen::generates_moves;
 
@@ -22,6 +23,20 @@ pub struct Ply {
     pub captured_piece: Option<Piece>,
     /// If the move is a pawn promotion, this field will contain the promotion piece.
     pub promotion_piece: Option<Piece>,
+}
+
+impl Default for Ply {
+    /// Returns an illegal default ply of a pawn move from a1 to a1.
+    /// It is only used to initialize a ply array with default values.
+    fn default() -> Self {
+        Ply {
+            source: square::A1,
+            target: square::A1,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        }
+    }
 }
 
 /// Prints the ply as text.
@@ -98,6 +113,16 @@ mod tests {
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
     use crate::move_gen::ply::Ply;
+    
+    #[test]
+    fn default_returns_illegal_ply() {
+        let ply = Ply::default();
+        assert_eq!(square::A1, ply.source);
+        assert_eq!(square::A1, ply.target);
+        assert_eq!(Piece::Pawn, ply.piece);
+        assert_eq!(None, ply.captured_piece);
+        assert_eq!(None, ply.promotion_piece);
+    }
 
     #[test]
     fn ply_formats_correctly() {
