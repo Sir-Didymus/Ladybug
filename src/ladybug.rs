@@ -121,7 +121,7 @@ impl Ladybug {
 
     /// Handles the "uci" command.
     fn handle_uci(&self) {
-        self.send_console("id name Ladybug 0.1.0".to_string());
+        self.send_console("id name Ladybug 0.2.0".to_string());
         self.send_console("id author Felix O.".to_string());
         self.send_console(String::from("uciok"));
     }
@@ -357,7 +357,7 @@ mod tests {
         let (input_sender, output_receiver) = setup();
 
         let _ = input_sender.send(ConsoleMessage(String::from("uci")));
-        assert_eq!("id name Ladybug 0.1.0", output_receiver.recv().unwrap());
+        assert_eq!("id name Ladybug 0.2.0", output_receiver.recv().unwrap());
         assert_eq!("id author Felix O.", output_receiver.recv().unwrap());
         assert_eq!("uciok", output_receiver.recv().unwrap());
     }

@@ -13,7 +13,7 @@ impl Search {
         // start the timer
         self.instant = Some(std::time::Instant::now());
 
-        // initialize the best move with a random one, in case the search stops prematurely
+        // initialize the best move to the first legal one, in case the search stops prematurely
         let mut best_move = move_gen::generates_moves(position)[0];
 
         // the total number of nodes searched
@@ -126,10 +126,7 @@ impl Search {
                 // update the max score
                 max_score = score;
                 
-                // --------------------
                 // update the pv table
-                // --------------------
-
                 self.pv_table[ply_index as usize][ply_index as usize] = ply;
                 for next_ply_index in (ply_index + 1) as u8..self.pv_length[ply_index as usize + 1] {
                     self.pv_table[ply_index as usize][next_ply_index as usize] = self.pv_table[ply_index as usize + 1][next_ply_index as usize];
