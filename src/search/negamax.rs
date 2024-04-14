@@ -1,6 +1,7 @@
 use std::time::Duration;
 use crate::board::position::Position;
 use crate::{evaluation, move_gen};
+use crate::evaluation::{NEGATIVE_INFINITY, POSITIVE_INFINITY};
 use crate::move_gen::ply::Ply;
 use crate::search::{MAX_PLY, Search};
 
@@ -22,7 +23,7 @@ impl Search {
         // start at depth 1 and increment the depth until the max depth is reached or the time runs out
         for depth in 1..=max_depth {
             // search to the current depth and save the score
-            let score = self.negamax(position, depth, 0, time_limit);
+            let score = self.negamax(position, depth, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY, time_limit);
 
             if self.stop {
                 // if the stop flag is set, break out of iterative deepening immediately
@@ -67,11 +68,11 @@ impl Search {
         self.pv_table = [[Ply::default(); MAX_PLY]; MAX_PLY];
     }
 
-    /// A basic implementation of the [negamax](https://www.chessprogramming.org/Negamax) algorithm.
+    /// A basic implementation of the [negamax](https://www.chessprogramming.org/Negamax) algorithm with alpha beta pruning.
     ///
     /// Instead of implementing two routines for the maximizing and minimizing players, this method
     /// negates the scores for each recursive call, making minimax easier to implement.
-    pub fn negamax(&mut self, position: Position, depth: u64, ply_index: u64, time_limit: Duration) -> i32 {
+    pub fn negamax(&mut self, position: Position, depth: u64, ply_index: u64, mut alpha: i32, beta: i32, time_limit: Duration) -> i32 {
         // check if the max ply number is reached
         if ply_index as usize >= MAX_PLY {
             // the maximum number of plies is reached - return static evaluation to avoid overflows
@@ -89,9 +90,6 @@ impl Search {
 
         // initialize the pv length
         self.pv_length[ply_index as usize] = ply_index as u8;
-
-        // the maximum score that can be reached in this position
-        let mut max_score = evaluation::NEGATIVE_INFINITY;
 
         // generate all legal moves for the current position
         let moves = move_gen::generates_moves(position);
@@ -119,13 +117,19 @@ impl Search {
         // iterate over all possible moves and call negamax recursively for the arising positions
         for ply in moves {
             // the score of the new position
-            let score = -self.negamax(position.make_move(ply), depth - 1, ply_index + 1, time_limit);
+            let score = -self.negamax(position.make_move(ply), depth - 1, ply_index + 1, -beta, -alpha, time_limit);
 
-            // check if the score of the position is better than the current max score
-            if score > max_score {
-                // update the max score
-                max_score = score;
-                
+            // fail-hard beta cutoff
+            if score >= beta {
+                // move fails high - the opponent won't allow this move because it's too good
+                return beta;
+            }
+            
+            // found a better move
+            if score > alpha {
+                // update alpha to the better score
+                alpha = score;
+
                 // update the pv table
                 self.pv_table[ply_index as usize][ply_index as usize] = ply;
                 for next_ply_index in (ply_index + 1) as u8..self.pv_length[ply_index as usize + 1] {
@@ -133,7 +137,10 @@ impl Search {
                 }
                 self.pv_length[ply_index as usize] = self.pv_length[ply_index as usize + 1];
             }
+            
+            // move fails low
+            // if score < alpha, it means we have already found a better move
         }
-        max_score
+        alpha
     }
 }
