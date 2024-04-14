@@ -34,6 +34,16 @@ impl MoveList {
     pub fn last_index(&self) -> u8 {
         self.index
     }
+    
+    /// Returns the length of the move list.
+    pub fn len(&self) -> u16 {
+        self.index.wrapping_add(1) as u16
+    }
+    
+    /// Returns true if the move list ist empty.
+    pub fn is_empty(&self) -> bool {
+        self.index == 255
+    }
 }
 
 #[cfg(test)]
@@ -52,9 +62,15 @@ mod tests {
         let ply5 = Ply {source: square::H3, target: square::C8, piece: Piece::Bishop, captured_piece: Some(Piece::Rook), promotion_piece: None};
         
         let mut move_list = MoveList::default();
+        assert_eq!(255, move_list.last_index());
+        assert_eq!(0, move_list.len());
+        assert!(move_list.is_empty());
+        
         move_list.push(ply1);
         assert_eq!(0, move_list.last_index());
+        assert_eq!(1, move_list.len());
         assert_eq!(ply1, move_list.get(0));
+        assert!(!move_list.is_empty());
         
         move_list.push(ply1);
         move_list.push(ply2);
@@ -63,11 +79,20 @@ mod tests {
         move_list.push(ply5);
         
         assert_eq!(5, move_list.last_index());
+        assert_eq!(6, move_list.len());
         assert_eq!(ply1, move_list.get(0));
         assert_eq!(ply1, move_list.get(1));
         assert_eq!(ply2, move_list.get(2));
         assert_eq!(ply3, move_list.get(3));
         assert_eq!(ply4, move_list.get(4));
         assert_eq!(ply5, move_list.get(5));
+        
+        let mut move_list = MoveList::default();
+        for _i in 0..255 {
+            move_list.push(Ply {source: square::G7, target: square::H8, piece: Piece::Pawn, captured_piece: Some(Piece::Queen), promotion_piece: Some(Piece::Knight)});
+        }
+        assert!(!move_list.is_empty());
+        assert_eq!(254, move_list.last_index());
+        assert_eq!(255, move_list.len());
     }
 }
