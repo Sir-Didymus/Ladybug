@@ -36,8 +36,8 @@ impl MoveList {
     }
     
     /// Returns the length of the move list.
-    pub fn len(&self) -> u16 {
-        self.index.wrapping_add(1) as u16
+    pub fn len(&self) -> u8 {
+        self.index.wrapping_add(1)
     }
     
     /// Returns true if the move list ist empty.
