@@ -6,6 +6,23 @@ use crate::board::square;
 use crate::board::square::Square;
 use crate::move_gen::generates_moves;
 
+const SOURCE_SQUARE_MASK: u32 = 0b11111100_00000000_00000000_00000000;
+const SHIFT_SOURCE_SQUARE: u32 = 26;
+
+const TARGET_SQUARE_MASK: u32 = 0b00000011_11110000_00000000_00000000;
+const SHIFT_TARGET_SQUARE: u32 = 20;
+
+const PIECE_MASK: u32 = 0b00000000_00001110_00000000_00000000;
+const SHIFT_PIECE: u32 = 17;
+
+const CAPTURED_PIECE_MASK: u32 = 0b00000000_00000001_11000000_00000000;
+const SHIFT_CAPTURED_PIECE: u32 = 14;
+
+const PROMOTION_PIECE_MASK: u32 = 0b00000000_00000000_00111000_00000000;
+const SHIFT_PROMOTION_PIECE: u32 = 11;
+
+
+
 /// This struct represents a halfmove, also known as [ply](https://www.chessprogramming.org/Ply).
 ///
 /// In the comments, I will often refer to a ply as a move, even though a move technically involves
@@ -53,6 +70,76 @@ impl Display for Ply {
 }
 
 impl Ply {
+    /// Encodes the ply as 32-bit unsigned integer.
+    ///
+    /// The format is as follows:
+    /// 11111100 00000000 00000000 00000000 : source square
+    /// 00000011 11110000 00000000 00000000 : target square
+    /// 00000000 00001110 00000000 00000000 : piece
+    /// 00000000 00000001 11000000 00000000 : captured piece
+    /// 00000000 00000000 00111000 00000000 : promotion piece
+    /// 00000000 00000000 00000111 11111111 : unused bits - may use later
+    pub fn encode(&self) -> u32 {
+        let mut encoded_ply: u32 = 0;
+        
+        // set the source square bits
+        encoded_ply |= (self.source.index as u32) << SHIFT_SOURCE_SQUARE;
+
+        // set the target square bits
+        encoded_ply |= (self.target.index as u32) << SHIFT_TARGET_SQUARE;
+        
+        // set the piece bits
+        encoded_ply |= (self.piece.to_index() as u32) << SHIFT_PIECE;
+
+        // set the captured piece bits
+        encoded_ply |= match self.captured_piece {
+            None => 6 << SHIFT_CAPTURED_PIECE, // 6 represents no piece
+            Some(captured_piece) => (captured_piece.to_index() as u32) << SHIFT_CAPTURED_PIECE,
+        };
+
+        // set the promotion piece bits
+        encoded_ply |= match self.promotion_piece {
+            None => 6 << SHIFT_PROMOTION_PIECE, // 6 represents no piece
+            Some(captured_piece) => (captured_piece.to_index() as u32) << SHIFT_PROMOTION_PIECE,
+        };
+        
+        encoded_ply
+    }
+
+    /// Decodes a 32-bit unsigned integer into a ply.
+    pub fn decode(encoded_ply: u32) -> Ply {
+        // decode source square
+        let source = Square::new(((encoded_ply & SOURCE_SQUARE_MASK) >> SHIFT_SOURCE_SQUARE) as u8);
+        
+        // decode target square
+        let target = Square::new(((encoded_ply & TARGET_SQUARE_MASK) >> SHIFT_TARGET_SQUARE) as u8);
+        
+        // decode piece
+        let piece = Piece::from_index(((encoded_ply & PIECE_MASK) >> SHIFT_PIECE) as u8);
+        
+        // decode captured piece
+        let piece_index = ((encoded_ply & CAPTURED_PIECE_MASK) >> SHIFT_CAPTURED_PIECE) as u8;
+        let captured_piece = match piece_index {
+            6 => None,
+            other => Some(Piece::from_index(other)),
+        };
+
+        // decode promotion piece
+        let piece_index = ((encoded_ply & PROMOTION_PIECE_MASK) >> SHIFT_PROMOTION_PIECE) as u8;
+        let promotion_piece = match piece_index {
+            6 => None,
+            other => Some(Piece::from_index(other)),
+        };
+        
+        Ply {
+            source,
+            target,
+            piece,
+            captured_piece,
+            promotion_piece,
+        }
+    }
+    
     /// Tries to construct a ply from the given string for the given position.
     pub fn from_string(ply_str: &str, position: Position) -> Option<Ply> {
         // get the chars from the ply string
@@ -109,7 +196,6 @@ impl Ply {
 mod tests {
     use crate::board::piece::Piece;
     use crate::board::{Board, square};
-    use crate::board::piece::Piece::Queen;
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
     use crate::move_gen::ply::Ply;
@@ -122,6 +208,24 @@ mod tests {
         assert_eq!(Piece::Pawn, ply.piece);
         assert_eq!(None, ply.captured_piece);
         assert_eq!(None, ply.promotion_piece);
+    }
+    
+    #[test]
+    fn test_encode_and_decode() {
+        let ply = Ply {source: square::A1, target: square::A2, piece: Piece::Rook, captured_piece: None, promotion_piece: None};
+        assert_eq!(ply, Ply::decode(ply.encode()));
+
+        let ply = Ply {source: square::H8, target: square::A8, piece: Piece::Rook, captured_piece: Some(Piece::Rook), promotion_piece: None};
+        assert_eq!(ply, Ply::decode(ply.encode()));
+
+        let ply = Ply {source: square::E4, target: square::D5, piece: Piece::Pawn, captured_piece: Some(Piece::Pawn), promotion_piece: None};
+        assert_eq!(ply, Ply::decode(ply.encode()));
+
+        let ply = Ply {source: square::G7, target: square::H8, piece: Piece::Pawn, captured_piece: Some(Piece::Queen), promotion_piece: Some(Piece::Knight)};
+        assert_eq!(ply, Ply::decode(ply.encode()));
+
+        let ply = Ply {source: square::H3, target: square::C8, piece: Piece::Bishop, captured_piece: Some(Piece::Rook), promotion_piece: None};
+        assert_eq!(ply, Ply::decode(ply.encode()));
     }
 
     #[test]
@@ -145,7 +249,7 @@ mod tests {
         
         ply.source = square::H7;
         ply.target = square::H8;
-        ply.promotion_piece = Some(Queen);
+        ply.promotion_piece = Some(Piece::Queen);
         assert_eq!("h7h8q", format!("{ply}"));
     }
 
