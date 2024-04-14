@@ -2,7 +2,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
 use crate::board::position::Position;
 use crate::ladybug::Message;
-use crate::move_gen::generates_moves;
+use crate::move_gen;
 use crate::move_gen::ply::Ply;
 
 pub mod perft;
@@ -92,8 +92,8 @@ impl Search {
 
     /// Handles the various "Search" commands.
     fn handle_search(&mut self, position: Position, depth_limit: Option<u64>, time_limit: Option<u64>) {
-        let moves = generates_moves(position);
-        if moves.is_empty() {
+        let move_list = move_gen::generate_moves(position);
+        if move_list.is_empty() {
             self.send_output(String::from("info string no legal moves"));
             return;
         }

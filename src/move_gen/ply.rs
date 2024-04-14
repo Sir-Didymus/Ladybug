@@ -4,7 +4,7 @@ use crate::board::piece::Piece;
 use crate::board::position::Position;
 use crate::board::square;
 use crate::board::square::Square;
-use crate::move_gen::generates_moves;
+use crate::move_gen;
 
 const SOURCE_SQUARE_MASK: u32 = 0b11111100_00000000_00000000_00000000;
 const SHIFT_SOURCE_SQUARE: u32 = 26;
@@ -180,10 +180,15 @@ impl Ply {
         }
 
         // generate all legal moves for the given position
-        let move_list = generates_moves(position);
+        let mut move_list = move_gen::generate_moves(position);
+        let mut move_list_vec: Vec<Ply> = Vec::new();
+
+        for i in 0..move_list.len() {
+            move_list_vec.push(move_list.get(i));
+        }
 
         // search for ply in the move list
-        let ply = match move_list.iter().find(|r| r.source == source_square && r.target == target_square && r.promotion_piece == promotion_piece) {
+        let ply = match move_list_vec.iter().find(|r| r.source == source_square && r.target == target_square && r.promotion_piece == promotion_piece) {
             None => return None, // if the move list does not contain a ply with the specified source and target squares, the move is not legal
             Some(ply) => *ply,
         };

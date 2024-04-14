@@ -15,7 +15,7 @@ impl Search {
         self.instant = Some(std::time::Instant::now());
 
         // initialize the best move to the first legal one, in case the search stops prematurely
-        let mut best_move = move_gen::generates_moves(position)[0];
+        let mut best_move = move_gen::generate_moves(position).get(0);
 
         // the total number of nodes searched
         let mut nodes_total: u128 = 0;
@@ -92,10 +92,10 @@ impl Search {
         self.pv_length[ply_index as usize] = ply_index as u8;
 
         // generate all legal moves for the current position
-        let moves = move_gen::generates_moves(position);
+        let mut move_list = move_gen::generate_moves(position);
 
         // if there are no legal moves, check for mate or stalemate
-        if moves.is_empty() {
+        if move_list.is_empty() {
             return if position.is_in_check(position.color_to_move) {
                 // In case of checkmate, return a large negative number.
                 // By adding a large number (larger than the worth of a queen) for each ply in the search tree, 
@@ -115,7 +115,9 @@ impl Search {
         }
 
         // iterate over all possible moves and call negamax recursively for the arising positions
-        for ply in moves {
+        for i in 0..move_list.len() {
+            let ply = move_list.get(i);
+            
             // the score of the new position
             let score = -self.negamax(position.make_move(ply), depth - 1, ply_index + 1, -beta, -alpha, time_limit);
 

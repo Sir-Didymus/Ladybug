@@ -1,6 +1,5 @@
 use crate::board::position::Position;
-use crate::move_gen::generates_moves;
-use crate::move_gen::ply::Ply;
+use crate::move_gen;
 use crate::search::Search;
 
 impl Search {
@@ -16,10 +15,11 @@ impl Search {
         let mut node_count: u64 = 0;
 
         // generate all legal moves for the position
-        let move_list: Vec<Ply> = generates_moves(position);
+        let mut move_list = move_gen::generate_moves(position);
 
         // call the perft_driver function for all legal moves and add the results to node_count
-        for ply in move_list {
+        for i in 0..move_list.len() {
+            let ply = move_list.get(i);
             let node_count_inner = self.perft_driver(position.make_move(ply), depth - 1);
             node_count += node_count_inner;
             self.send_output(format!("{ply}: {node_count_inner}"));
@@ -42,10 +42,11 @@ impl Search {
         let mut node_count: u64 = 0;
 
         // generate all legal moves for the position
-        let move_list: Vec<Ply> = generates_moves(position);
+        let mut move_list = move_gen::generate_moves(position);
 
         // call the perft_driver function recursively for all legal moves and add the results to node_count
-        for ply in move_list {
+        for i in 0..move_list.len() {
+            let ply = move_list.get(i);
             node_count += self.perft_driver(position.make_move(ply), depth - 1);
         }
 
