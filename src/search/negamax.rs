@@ -17,11 +17,14 @@ impl Search {
         // initialize the best move to the first legal one, in case the search stops prematurely
         let mut best_move = move_gen::generate_moves(position).get(0);
 
-        // the total number of nodes searched
-        let mut nodes_total: u128 = 0;
-
         // start at depth 1 and increment the depth until the max depth is reached or the time runs out
         for depth in 1..=max_depth {
+            // set the node count to 0
+            self.node_count = 0;
+
+            // set the start time for this iteration
+            let iteration_time = std::time::Instant::now();
+            
             // search to the current depth and save the score
             let score = self.negamax(position, depth, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY, time_limit);
 
@@ -31,17 +34,18 @@ impl Search {
             }
 
             // calculate nodes per second
-            nodes_total += self.node_count;
             let mut nps: u128 = 0;
-            if let Some(instant) = self.instant {
-                let time_elapsed = instant.elapsed().as_millis();
-                if time_elapsed > 0 {
-                    nps = (nodes_total / time_elapsed) * 1000;
-                }
+            let iteration_time_elapsed = iteration_time.elapsed().as_millis();
+            if iteration_time_elapsed > 0 {
+                nps = (self.node_count / iteration_time_elapsed) * 1000;
             }
+            else {
+                nps = self.node_count;
+            }
+            
 
             // send the information for the current iteration
-            let mut output = format!("info depth {depth} score cp {score} nodes {nodes} nps {nps} pv", nodes = self.node_count);
+            let mut output = format!("info depth {depth} score cp {score} nodes {nodes} time {iteration_time_elapsed} nps {nps} pv", nodes = self.node_count);
             for ply_num in 0..self.pv_length[0] {
                 output += format!(" {}", self.pv_table[0][ply_num as usize]).as_str();
             }
@@ -49,9 +53,6 @@ impl Search {
 
             // set the best move to the result of this iteration
             best_move = self.pv_table[0][0];
-
-            // reset the node_count
-            self.node_count = 0;
         }
 
         // send the best move to the main thread
