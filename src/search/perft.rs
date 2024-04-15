@@ -15,7 +15,7 @@ impl Search {
         let mut node_count: u64 = 0;
 
         // generate all legal moves for the position
-        let mut move_list = move_gen::generate_moves(position);
+        let move_list = move_gen::generate_moves(position);
 
         // call the perft_driver function for all legal moves and add the results to node_count
         for i in 0..move_list.len() {
@@ -42,7 +42,7 @@ impl Search {
         let mut node_count: u64 = 0;
 
         // generate all legal moves for the position
-        let mut move_list = move_gen::generate_moves(position);
+        let move_list = move_gen::generate_moves(position);
 
         // call the perft_driver function recursively for all legal moves and add the results to node_count
         for i in 0..move_list.len() {
