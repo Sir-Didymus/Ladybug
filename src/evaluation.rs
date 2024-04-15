@@ -2,7 +2,7 @@ use crate::board::color::{Color, NUM_COLORS};
 use crate::board::piece::{NUM_PIECES, Piece};
 use crate::board::position::Position;
 
-mod pst;
+pub mod pst;
 /// The highest possible value.
 pub const POSITIVE_INFINITY: i32 = i32::MAX - 1;
 /// The lowest possible value.

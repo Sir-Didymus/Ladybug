@@ -32,7 +32,7 @@ const PST: [[i32; 64]; 6] = [
 ];
 
 /// The base values of the pieces.
-const PIECE_VALUES: [i32; 6] = [
+pub const PIECE_VALUES: [i32; 6] = [
     100,
     320,
     330,

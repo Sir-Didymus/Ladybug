@@ -4,6 +4,7 @@ use crate::board::piece::Piece;
 use crate::board::position::Position;
 use crate::board::square;
 use crate::board::square::Square;
+use crate::evaluation::pst;
 use crate::move_gen;
 
 const SOURCE_SQUARE_MASK: u32 = 0b11111100_00000000_00000000_00000000;
@@ -70,6 +71,26 @@ impl Display for Ply {
 }
 
 impl Ply {
+    /// Returns the score of the ply based on [MVV-LVA](https://www.chessprogramming.org/MVV-LVA).
+    pub fn score(&self) -> i32 {
+        let mut score = 0;
+        
+        // add the value of the captured piece (if any)
+        if let Some(piece) = self.captured_piece {
+            score += pst::PIECE_VALUES[piece.to_index() as usize];
+        }
+        
+        // add the value of the promotion piece (if any)
+        if let Some(piece) = self.promotion_piece {
+            score += pst::PIECE_VALUES[piece.to_index() as usize];
+        }
+        
+        // subtract the index of the moving piece
+        score -= self.piece.to_index() as i32;
+        
+        score
+    }
+    
     /// Encodes the ply as 32-bit unsigned integer.
     ///
     /// The format is as follows:
@@ -180,7 +201,7 @@ impl Ply {
         }
 
         // generate all legal moves for the given position
-        let mut move_list = move_gen::generate_moves(position);
+        let move_list = move_gen::generate_moves(position);
         let mut move_list_vec: Vec<Ply> = Vec::new();
 
         for i in 0..move_list.len() {
@@ -213,6 +234,18 @@ mod tests {
         assert_eq!(Piece::Pawn, ply.piece);
         assert_eq!(None, ply.captured_piece);
         assert_eq!(None, ply.promotion_piece);
+    }
+    
+    #[test]
+    fn test_score() {
+        let ply = Ply {source: square::A1, target: square::A2, piece: Piece::Rook, captured_piece: None, promotion_piece: None};
+        assert_eq!(-3, ply.score());
+
+        let ply = Ply {source: square::A1, target: square::A2, piece: Piece::Pawn, captured_piece: None, promotion_piece: Some(Piece::Knight)};
+        assert_eq!(320, ply.score());
+
+        let ply = Ply {source: square::H7, target: square::H8, piece: Piece::Pawn, captured_piece: Some(Piece::Queen), promotion_piece: Some(Piece::Knight)};
+        assert_eq!(1270, ply.score());
     }
     
     #[test]
