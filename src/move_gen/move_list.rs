@@ -1,19 +1,17 @@
+use arrayvec::ArrayVec;
 use crate::move_gen::ply::Ply;
 
 /// The move can hold up to 255 ply, encoded as unsigned 32-bit integers.
 pub struct MoveList {
     /// The array of encoded moves.
-    moves: [u32; 255],
-    /// The index of the last element.
-    index: u8,
+    moves: ArrayVec<u32, 255>,
 }
 
 impl Default for MoveList {
     /// Constructs a new move list.
     fn default() -> Self{
         MoveList {
-            moves: [0; 255],
-            index: 255,
+            moves: ArrayVec::new(),
         }
     }
 }
@@ -21,8 +19,7 @@ impl Default for MoveList {
 impl MoveList {
     /// Adds a ply to the move list.
     pub fn push(&mut self, ply: Ply) {
-        self.index = self.index.wrapping_add(1);
-        self.moves[self.index as usize] = ply.encode();
+        self.moves.push(ply.encode());
     }
 
     /// Returns the ply with the given index.
@@ -30,19 +27,15 @@ impl MoveList {
         Ply::decode(self.moves[index as usize])
     }
     
-    /// Returns the index of the last element in the move list.
-    pub fn last_index(&self) -> u8 {
-        self.index
-    }
     
     /// Returns the length of the move list.
     pub fn len(&self) -> u8 {
-        self.index.wrapping_add(1)
+        self.moves.len() as u8
     }
     
     /// Returns true if the move list ist empty.
     pub fn is_empty(&self) -> bool {
-        self.index == 255
+        self.moves.is_empty()
     }
 }
 
@@ -62,12 +55,10 @@ mod tests {
         let ply5 = Ply {source: square::H3, target: square::C8, piece: Piece::Bishop, captured_piece: Some(Piece::Rook), promotion_piece: None};
         
         let mut move_list = MoveList::default();
-        assert_eq!(255, move_list.last_index());
         assert_eq!(0, move_list.len());
         assert!(move_list.is_empty());
         
         move_list.push(ply1);
-        assert_eq!(0, move_list.last_index());
         assert_eq!(1, move_list.len());
         assert_eq!(ply1, move_list.get(0));
         assert!(!move_list.is_empty());
@@ -78,7 +69,6 @@ mod tests {
         move_list.push(ply4);
         move_list.push(ply5);
         
-        assert_eq!(5, move_list.last_index());
         assert_eq!(6, move_list.len());
         assert_eq!(ply1, move_list.get(0));
         assert_eq!(ply1, move_list.get(1));
@@ -92,7 +82,6 @@ mod tests {
             move_list.push(Ply {source: square::G7, target: square::H8, piece: Piece::Pawn, captured_piece: Some(Piece::Queen), promotion_piece: Some(Piece::Knight)});
         }
         assert!(!move_list.is_empty());
-        assert_eq!(254, move_list.last_index());
         assert_eq!(255, move_list.len());
     }
 }
