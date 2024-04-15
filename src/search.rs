@@ -32,8 +32,8 @@ pub struct Search {
     message_sender: Sender<Message>,
     /// The number of nodes evaluated during the current iteration of the search.
     node_count: u128,
-    /// Used to measure the expired time during search.
-    instant: Option<Instant>,
+    /// Used to measure the total expired time across all iterations during search.
+    total_time: Option<Instant>,
     /// Stores the lengths of the principe variations.
     pv_length: [u8; MAX_PLY],
     /// Stores the principle variations.
@@ -49,7 +49,7 @@ impl Search {
             command_receiver: input_receiver,
             message_sender: output_sender,
             node_count: 0,
-            instant: None,
+            total_time: None,
             pv_length: [0; MAX_PLY],
             // initialize the pv table with null moves (a1 to a1)
             pv_table: [[Ply::default(); MAX_PLY];MAX_PLY],

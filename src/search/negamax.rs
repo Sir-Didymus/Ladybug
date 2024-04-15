@@ -11,8 +11,8 @@ impl Search {
         // reset the stop flag to allow searching
         self.stop = false;
 
-        // start the timer
-        self.instant = Some(std::time::Instant::now());
+        // start the total time
+        self.total_time = Some(std::time::Instant::now());
 
         // initialize the best move to the first legal one, in case the search stops prematurely
         let mut best_move = move_gen::generate_moves(position).get(0);
@@ -59,7 +59,7 @@ impl Search {
         self.send_output(format!("bestmove {}", best_move));
 
         // reset the timer
-        self.instant = None;
+        self.total_time = None;
 
         // reset the node count
         self.node_count = 0;
@@ -81,7 +81,7 @@ impl Search {
         }
 
         // check if the time limit is reached
-        if let Some(instant) = self.instant {
+        if let Some(instant) = self.total_time {
             if instant.elapsed() > time_limit {
                 // the time limit is reached - break out of recursion immediately
                 self.stop = true;
