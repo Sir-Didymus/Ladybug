@@ -43,6 +43,19 @@ impl MoveList {
     pub fn sort(&mut self) {
         self.moves.sort_by_key(|encoded_ply| Reverse(Ply::decode(*encoded_ply).score()));
     }
+    
+    /// Returns a new move list that only contains capture moves.
+    pub fn get_captures(&self) -> MoveList {
+        let mut capture_list = MoveList::default();
+
+        for ply in &self.moves {
+            if Ply::decode(*ply).captured_piece.is_some() {
+                capture_list.moves.push(*ply);
+            }
+        }
+        
+        capture_list
+    }
 }
 
 #[cfg(test)]
@@ -118,5 +131,26 @@ mod tests {
         assert_eq!(ply2, move_list.get(2));
         assert_eq!(ply3, move_list.get(3));
         assert_eq!(ply1, move_list.get(4));
+    }
+    
+    #[test]
+    fn test_get_captures() {
+        let ply1 = Ply {source: square::A1, target: square::A2, piece: Piece::Rook, captured_piece: None, promotion_piece: None};
+        let ply2 = Ply {source: square::H8, target: square::A8, piece: Piece::Rook, captured_piece: Some(Piece::Rook), promotion_piece: None};
+        let ply3 = Ply {source: square::E4, target: square::D5, piece: Piece::Pawn, captured_piece: Some(Piece::Pawn), promotion_piece: None};
+        let ply4 = Ply {source: square::G7, target: square::H8, piece: Piece::Pawn, captured_piece: Some(Piece::Queen), promotion_piece: Some(Piece::Knight)};
+        let ply5 = Ply {source: square::H3, target: square::C8, piece: Piece::Bishop, captured_piece: Some(Piece::Rook), promotion_piece: None};
+
+        let mut move_list = MoveList::default();
+
+        move_list.push(ply1);
+        move_list.push(ply2);
+        move_list.push(ply3);
+        move_list.push(ply4);
+        move_list.push(ply5);
+        
+        let capture_list = move_list.get_captures();
+        
+        assert_eq!(4, capture_list.len())
     }
 }
