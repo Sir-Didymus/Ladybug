@@ -1,3 +1,4 @@
+use std::cmp::Reverse;
 use arrayvec::ArrayVec;
 use crate::move_gen::ply::Ply;
 
@@ -36,6 +37,11 @@ impl MoveList {
     /// Returns true if the move list ist empty.
     pub fn is_empty(&self) -> bool {
         self.moves.is_empty()
+    }
+    
+    /// Sorts the move list by MVV-LVA.
+    pub fn sort(&mut self) {
+        self.moves.sort_by_key(|encoded_ply| Reverse(Ply::decode(*encoded_ply).score()));
     }
 }
 
@@ -83,5 +89,34 @@ mod tests {
         }
         assert!(!move_list.is_empty());
         assert_eq!(255, move_list.len());
+    }
+    
+    #[test]
+    fn test_sort() {
+        let ply1 = Ply {source: square::A1, target: square::A2, piece: Piece::Rook, captured_piece: None, promotion_piece: None};
+        let ply2 = Ply {source: square::H8, target: square::A8, piece: Piece::Rook, captured_piece: Some(Piece::Rook), promotion_piece: None};
+        let ply3 = Ply {source: square::E4, target: square::D5, piece: Piece::Pawn, captured_piece: Some(Piece::Pawn), promotion_piece: None};
+        let ply4 = Ply {source: square::G7, target: square::H8, piece: Piece::Pawn, captured_piece: Some(Piece::Queen), promotion_piece: Some(Piece::Knight)};
+        let ply5 = Ply {source: square::H3, target: square::C8, piece: Piece::Bishop, captured_piece: Some(Piece::Rook), promotion_piece: None};
+        
+        let mut move_list = MoveList::default();
+        
+        move_list.push(ply1);
+        move_list.push(ply2);
+        move_list.push(ply3);
+        move_list.push(ply4);
+        move_list.push(ply5);
+        
+        assert_eq!(5, move_list.len());
+        
+        move_list.sort();
+
+        assert_eq!(5, move_list.len());
+        
+        assert_eq!(ply4, move_list.get(0));
+        assert_eq!(ply5, move_list.get(1));
+        assert_eq!(ply2, move_list.get(2));
+        assert_eq!(ply3, move_list.get(3));
+        assert_eq!(ply1, move_list.get(4));
     }
 }

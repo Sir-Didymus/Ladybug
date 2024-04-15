@@ -18,5 +18,6 @@ pub fn generate_moves(position: Position) -> MoveList {
     generate_pawn_moves(position, &mut move_list);
     generate_leaper_moves(position, &mut move_list);
     generate_slider_moves(position, &mut move_list);
+    move_list.sort();
     move_list
 }
