@@ -2,7 +2,7 @@ use std::cmp::Reverse;
 use arrayvec::ArrayVec;
 use crate::move_gen::ply::Ply;
 
-/// The move can hold up to 255 ply, encoded as unsigned 32-bit integers.
+/// The move list can hold up to 255 ply, encoded as unsigned 32-bit integers.
 pub struct MoveList {
     /// The array of encoded moves.
     moves: ArrayVec<u32, 255>,
