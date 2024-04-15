@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use arrayvec::ArrayVec;
 use crate::board::file::{File, NUM_FILES};
 use crate::board::rank::{NUM_RANKS, Rank};
 use crate::board::square::{Square};
@@ -45,8 +46,8 @@ impl Bitboard {
     
     /// Returns a list of all the squares that are set to 1.
     /// Implemented using a combination of `trailing_zeros()` and Brian Kernighan's algorithm.
-    pub fn get_active_bits(&self) -> Vec<Square> {
-        let mut active_bits: Vec<Square> = Vec::new();
+    pub fn get_active_bits(&self) -> ArrayVec<Square, 64> {
+        let mut active_bits: ArrayVec<Square, 64> = ArrayVec::new();
         let mut bb_value = self.value;
         while bb_value > 0 {
             active_bits.push(Square::new(bb_value.trailing_zeros() as u8));
