@@ -92,7 +92,7 @@ impl Search {
         self.pv_length[ply_index as usize] = ply_index as u8;
 
         // generate all legal moves for the current position
-        let mut move_list = move_gen::generate_moves(position);
+        let move_list = move_gen::generate_moves(position);
 
         // if there are no legal moves, check for mate or stalemate
         if move_list.is_empty() {

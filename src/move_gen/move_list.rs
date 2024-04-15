@@ -19,14 +19,14 @@ impl Default for MoveList {
 }
 
 impl MoveList {
-    /// Adds the ply to the move list.
+    /// Adds a ply to the move list.
     pub fn push(&mut self, ply: Ply) {
         self.index = self.index.wrapping_add(1);
         self.moves[self.index as usize] = ply.encode();
     }
 
-    /// Adds the ply to the move list.
-    pub fn get(&mut self, index: u8) -> Ply {
+    /// Returns the ply with the given index.
+    pub fn get(&self, index: u8) -> Ply {
         Ply::decode(self.moves[index as usize])
     }
     
