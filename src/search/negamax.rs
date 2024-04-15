@@ -108,11 +108,9 @@ impl Search {
             };
         }
 
-        // if depth 0 is reached, break out of the recursion by returning the static evaluation of the position
+        // if depth 0 is reached, start the quiescence search
         if depth == 0 {
-            // increment the number of nodes searched
-            self.node_count += 1;
-            return evaluation::evaluate(position);
+            return self.quiescence_search(position, alpha, beta, time_limit);
         }
 
         // iterate over all possible moves and call negamax recursively for the arising positions

@@ -7,6 +7,7 @@ use crate::move_gen::ply::Ply;
 
 pub mod perft;
 pub mod negamax;
+mod quiescence_search;
 
 /// The maximum number of plies Ladybug is able to search.
 /// This number shouldn't ever be reached.
