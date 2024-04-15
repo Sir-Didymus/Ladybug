@@ -267,7 +267,6 @@ mod tests {
         let position = Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2").unwrap().position;
         let mut move_list = MoveList::default();
         pawn_moves::generate_attacking_pawn_moves(position, &mut move_list);
-        println!("{}", move_list.last_index());
         assert_eq!(1, move_list.len());
 
         // position 3
