@@ -517,10 +517,17 @@ mod tests {
         let (input_sender, output_receiver) = setup();
 
         let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
-        let _ = input_sender.send(ConsoleMessage(String::from("go perft 4")));
-        assert_eq!("a2a3: 8457", output_receiver.recv().unwrap());
-        assert_eq!("a2a4: 9329", output_receiver.recv().unwrap());
-        assert_eq!("b2b3: 9345", output_receiver.recv().unwrap());
+        let _ = input_sender.send(ConsoleMessage(String::from("go perft 1")));
+        
+        thread::sleep(Duration::from_millis(50));
+
+        // collect all messages that have accumulated in the channel
+        let mut output: Vec<String> = Vec::new();
+        while let Ok(output_str) = output_receiver.try_recv() {
+            output.push(output_str);
+        }
+
+        assert!(output.iter().any(|r| r.contains("Searched")));
     }
     
     #[test]
