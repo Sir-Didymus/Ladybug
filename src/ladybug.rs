@@ -205,11 +205,19 @@ impl Ladybug {
     }
 
     /// Handles the "go wtime <time> btime <time>" command.
-    fn handle_go_clock_time(&self, args: Vec<String>) {
-        if args.len() != 8 {
+    fn handle_go_clock_time(&self, mut args: Vec<String>) {
+        if  args.len() != 4 && args.len() != 8 {
             self.send_console(String::from("info string unknown command"));
             return;
         }
+        
+        if args.len() == 4 {
+            args.push("winc".to_string());
+            args.push("0".to_string());
+            args.push("binc".to_string());
+            args.push("0".to_string());
+        }
+        
         if args[0] != "wtime" || args[2] != "btime" || args[4] != "winc" || args[6] != "binc" {
             self.send_console(String::from("info string unknown command"));
             return;
@@ -229,8 +237,16 @@ impl Ladybug {
             Color::White => w_time.unwrap(),
             Color::Black => b_time.unwrap(),
         };
+
+
+        let increment =  match self.board.position.color_to_move{
+            Color::White => w_inc.unwrap(),
+            Color::Black => b_inc.unwrap(),
+        };
         
-        self.send_search(SearchCommand::SearchTime(self.board.position, time / 40))
+        let time = (time / 40) + increment;
+        
+        self.send_search(SearchCommand::SearchTime(self.board.position, time));
     }
     
     /// Handles the "go depth <depth>" command.
@@ -407,9 +423,13 @@ mod tests {
     #[test]
     fn test_ladybug_for_go_clock_time() {
         let (input_sender, output_receiver) = setup();
-
+        
+        // ----------------------------------------------
+        // with increment
+        // ----------------------------------------------
+        
         let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
-        let _ = input_sender.send(ConsoleMessage(String::from("go wtime 100 btime 100 winc 0 binc 0")));
+        let _ = input_sender.send(ConsoleMessage(String::from("go wtime 100 btime 100 winc 10 binc 10")));
 
         thread::sleep(Duration::from_millis(100));
 
@@ -423,6 +443,23 @@ mod tests {
             println!("{}", output_str)
         }
         
+        assert!(output.iter().any(|r| r.contains("bestmove")));
+
+        // ----------------------------------------------
+        // without increment
+        // ----------------------------------------------
+
+        let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
+        let _ = input_sender.send(ConsoleMessage(String::from("go wtime 100 btime 100")));
+
+        thread::sleep(Duration::from_millis(100));
+
+        // collect all messages that have accumulated in the channel
+        let mut output: Vec<String> = Vec::new();
+        while let Ok(output_str) = output_receiver.try_recv() {
+            output.push(output_str);
+        }
+
         assert!(output.iter().any(|r| r.contains("bestmove")));
     }
 
