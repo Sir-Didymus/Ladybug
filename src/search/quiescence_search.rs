@@ -4,6 +4,10 @@ use crate::{evaluation, move_gen};
 use crate::search::{Search};
 
 impl Search {
+    /// The [Quiescence Search](https://www.chessprogramming.org/Quiescence_Search) function is very similar
+    /// to the negamax function, but instead of looking at all moves, it only looks at captures.
+    /// It also uses something called a "standing pat", which is initialized with the static evaluation and is
+    /// used to cause beta-cutoffs earlier, thus reducing the number of nodes searched.
     pub fn quiescence_search(&mut self, position: Position, mut alpha: i32, beta: i32, time_limit: Duration) -> i32 {
         // check if the time limit is reached
         if let Some(instant) = self.total_time {
