@@ -85,6 +85,7 @@ impl Ladybug {
                         UciCommand::UciNewGame => self.hande_uci_new_game(),
                         UciCommand::Position(args) => self.handle_position(args),
                         UciCommand::GoClockTime(args) => self.handle_go_clock_time(args),
+                        UciCommand::GoMoveTime(time) => self.handle_go_move_time(time),
                         UciCommand::GoDepth(depth) => self.handle_depth(depth),
                         UciCommand::GoPerft(depth) => self.handle_go_perft(depth),
                         UciCommand::Quit => {
@@ -248,6 +249,19 @@ impl Ladybug {
         
         self.send_search(SearchCommand::SearchTime(self.board.position, time));
     }
+
+    /// Handles the "go movetime <time>" command.
+    fn handle_go_move_time(&self, time: String)  {
+        let time = time.parse::<u64>();
+        match time {
+            Err(_) => {
+                self.send_console(String::from("info string unknown command"));
+            }
+            Ok(time) => {
+                self.send_search(SearchCommand::SearchTime(self.board.position, time));
+            }
+        }
+    }
     
     /// Handles the "go depth <depth>" command.
     fn handle_depth(&self, depth_str: String) {
@@ -289,6 +303,7 @@ impl Ladybug {
         self.send_console(String::from("ucinewgame                                              : Reset the internal board state"));
         self.send_console(String::from("position fen <fen> moves <moves>                        : Setup the board position"));
         self.send_console(String::from("go wtime <time> btime <time> winc <time> binc <time>    : Start searching"));
+        self.send_console(String::from("go movetime <time>                                      : Search for the specified time"));
         self.send_console(String::from("go depth <depth>                                        : Search to the specified depth"));
         self.send_console(String::from("go perft <depth>                                        : Perform a perft test"));
         self.send_console(String::from("quit                                                    : Quit Ladybug"));
@@ -464,6 +479,24 @@ mod tests {
     }
 
     #[test]
+    fn test_ladybug_for_go_move_time() {
+        let (input_sender, output_receiver) = setup();
+
+        let _ = input_sender.send(ConsoleMessage(String::from("position startpos")));
+        let _ = input_sender.send(ConsoleMessage(String::from("go movetime 100")));
+
+        thread::sleep(Duration::from_millis(150));
+
+        // collect all messages that have accumulated in the channel
+        let mut output: Vec<String> = Vec::new();
+        while let Ok(output_str) = output_receiver.try_recv() {
+            output.push(output_str);
+        }
+
+        assert!(output.iter().any(|r| r.contains("bestmove")));
+    }
+
+    #[test]
     fn test_ladybug_for_go_depth() {
         let (input_sender, output_receiver) = setup();
 
@@ -510,6 +543,7 @@ mod tests {
         assert_eq!("ucinewgame                                              : Reset the internal board state", output_receiver.recv().unwrap());
         assert_eq!("position fen <fen> moves <moves>                        : Setup the board position", output_receiver.recv().unwrap());
         assert_eq!("go wtime <time> btime <time> winc <time> binc <time>    : Start searching", output_receiver.recv().unwrap());
+        assert_eq!("go movetime <time>                                      : Search for the specified time", output_receiver.recv().unwrap());
         assert_eq!("go depth <depth>                                        : Search to the specified depth", output_receiver.recv().unwrap());
         assert_eq!("go perft <depth>                                        : Perform a perft test", output_receiver.recv().unwrap());
         assert_eq!("quit                                                    : Quit Ladybug", output_receiver.recv().unwrap());

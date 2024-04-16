@@ -6,6 +6,7 @@ pub enum UciCommand {
     UciNewGame,
     Position(Vec<String>),
     GoClockTime(Vec<String>),
+    GoMoveTime(String),
     GoDepth(String),
     GoPerft(String),
     Quit,
@@ -56,6 +57,14 @@ pub fn parse_uci(input: String) -> Result<UciCommand, String> {
                         }
                     }
                     "wtime" => Ok(UciCommand::GoClockTime(uci_parts.split_off(1))),
+                    "movetime" => {
+                        if uci_parts.len() != 3 {
+                            Err(String::from("info string unknown command"))
+                        }
+                        else {
+                            Ok(UciCommand::GoMoveTime(uci_parts[2].clone()))
+                        }
+                    }
                     _other => Err(String::from("info string unknown command"))
                 }
             }
@@ -111,6 +120,11 @@ mod tests {
     fn test_parse_uci_for_go_clock_time() {
         assert_eq!(UciCommand::GoClockTime(vec!["wtime".to_string(), "300000".to_string(), "btime".to_string(), "300000".to_string(), "winc".to_string(), "0".to_string(), "binc".to_string(), "0".to_string()]), 
                    uci::parse_uci(String::from("go wtime 300000 btime 300000 winc 0 binc 0")).unwrap());
+    }
+
+    #[test]
+    fn test_parse_uci_for_go_move_time() {
+        assert_eq!(UciCommand::GoMoveTime("100".to_string()), uci::parse_uci(String::from("go movetime 100")).unwrap());
     }
 
     #[test]
