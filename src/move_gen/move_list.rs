@@ -40,8 +40,11 @@ impl MoveList {
         self.moves.is_empty()
     }
     
-    /// Sorts the move list by MVV-LVA.
-    pub fn sort(&mut self, search_info: &SearchInfo, ply_index: u64) {
+    /// Sorts the move list by MVV-LVA and various other heuristics.
+    pub fn sort(&mut self, search_info: &mut SearchInfo, ply_index: u64) {
+        // flag to signal whether the pv move of the last search iteration is contained in this move list
+        let mut contains_pv = false;
+        
         self.moves.sort_by_key(|encoded_ply| {
             // score the move based on MVV-LVA
             let ply = Ply::decode(*encoded_ply);
@@ -62,9 +65,20 @@ impl MoveList {
                     score += search_info.history_moves[ply.piece.to_index() as usize][ply.target.index as usize];
                 }
             }
+            
+            // check if we are following the pv line
+            if search_info.follow_pv && ply == search_info.pv_table[0][ply_index as usize] {
+                contains_pv = true;
+                score += 1_000_000;
+            }
 
             Reverse(score)
         });
+        
+        // If the move list does not contain the pv move from the last iteration, we are no longer following the pv line
+        if !contains_pv {
+            search_info.follow_pv = false;
+        }
     }
     
     /// Returns a new move list that only contains capture moves.
@@ -130,7 +144,7 @@ mod tests {
     
     #[test]
     fn test_sort() {
-        let search_info = SearchInfo::default();
+        let mut search_info = SearchInfo::default();
         
         let ply1 = Ply {source: square::A1, target: square::A2, piece: Piece::Rook, captured_piece: None, promotion_piece: None};
         let ply2 = Ply {source: square::H8, target: square::A8, piece: Piece::Rook, captured_piece: Some(Piece::Rook), promotion_piece: None};
@@ -148,7 +162,7 @@ mod tests {
         
         assert_eq!(5, move_list.len());
         
-        move_list.sort(&search_info, 0);
+        move_list.sort(&mut search_info, 0);
 
         assert_eq!(5, move_list.len());
         

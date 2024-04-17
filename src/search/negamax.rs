@@ -90,7 +90,7 @@ impl Search {
         let mut move_list = move_gen::generate_moves(position);
 
         // sort the  move list
-        move_list.sort(&self.search_info, ply_index);
+        move_list.sort(&mut self.search_info, ply_index);
 
         // if there are no legal moves, check for mate or stalemate
         if move_list.is_empty() {

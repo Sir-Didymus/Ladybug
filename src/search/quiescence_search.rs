@@ -40,7 +40,7 @@ impl Search {
         let mut capture_list = move_gen::generate_moves(position).get_captures();
 
         // sort the capture list
-        capture_list.sort(&self.search_info, ply_index);
+        capture_list.sort(&mut self.search_info, ply_index);
 
         // iterate over all capture moves and call the quiescence search recursively for the arising positions
         for i in 0..capture_list.len() {

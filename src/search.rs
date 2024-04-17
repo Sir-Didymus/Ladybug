@@ -54,6 +54,8 @@ pub struct SearchInfo {
     pub killer_moves: [[Ply; MAX_PLY]; 2],
     /// Stores the history moves. These are moves that increased alpha in other positions, and are worth searching first.
     pub history_moves: [[i32; NUM_SQUARES as usize]; NUM_PIECES as usize],
+    /// This flag signals whether the search is currently following the pv line from the previous iteration.
+    pub follow_pv: bool,
 }
 
 impl Default for SearchInfo {
@@ -67,6 +69,7 @@ impl Default for SearchInfo {
             // initialize the killer moves with null moves (a1 to a1)
             killer_moves: [[Ply::default(); MAX_PLY]; 2],
             history_moves: [[0; NUM_SQUARES as usize]; NUM_PIECES as usize],
+            follow_pv: true,
         }
     }
 }
@@ -76,7 +79,7 @@ impl SearchInfo {
     pub fn clear_iteration(&mut self) {
         self.node_count = 0;
         self.pv_length = [0; MAX_PLY];
-        self.pv_table = [[Ply::default(); MAX_PLY]; MAX_PLY];
+        self.follow_pv = true;
     }
 
     /// Clears all search information.
@@ -175,6 +178,7 @@ mod tests {
         assert_eq!([[Ply::default(); MAX_PLY];MAX_PLY], search_info.pv_table);
         assert_eq!([[Ply::default(); MAX_PLY]; 2], search_info.killer_moves);
         assert_eq!([[0; NUM_SQUARES as usize]; NUM_PIECES as usize], search_info.history_moves);
+        assert!(search_info.follow_pv);
     }
 
     #[test]
@@ -182,13 +186,14 @@ mod tests {
         let mut search_info = SearchInfo::default();
         search_info.node_count = 50000;
         search_info.pv_length[0] = 5;
-        search_info.pv_table[4][4] = Ply {
+        let pv_ply = Ply {
             source: square::E2,
             target: square::E8,
             piece: Piece::Rook,
             captured_piece: None,
             promotion_piece: None,
         };
+        search_info.pv_table[4][4] = pv_ply;
         let killer_move = Ply {
             source: square::H7,
             target: square::H8,
@@ -198,15 +203,17 @@ mod tests {
         };
         search_info.killer_moves[0][5] = killer_move;
         search_info.history_moves[2][13] = 40;
+        search_info.follow_pv = false;
 
         search_info.clear_iteration();
 
         // these should be cleared
         assert_eq!(0, search_info.node_count);
         assert_eq!([0; MAX_PLY], search_info.pv_length);
-        assert_eq!([[Ply::default(); MAX_PLY];MAX_PLY], search_info.pv_table);
+        assert!(search_info.follow_pv);
 
         // this should stay the same
+        assert_eq!(pv_ply, search_info.pv_table[4][4]);
         assert_eq!(killer_move, search_info.killer_moves[0][5]);
         assert_eq!(40, search_info.history_moves[2][13]);
     }
