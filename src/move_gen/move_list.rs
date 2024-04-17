@@ -1,6 +1,7 @@
 use std::cmp::Reverse;
 use arrayvec::ArrayVec;
 use crate::move_gen::ply::Ply;
+use crate::search::SearchInfo;
 
 /// The move list can hold up to 255 ply, encoded as unsigned 32-bit integers.
 pub struct MoveList {
@@ -40,8 +41,26 @@ impl MoveList {
     }
     
     /// Sorts the move list by MVV-LVA.
-    pub fn sort(&mut self) {
-        self.moves.sort_by_key(|encoded_ply| Reverse(Ply::decode(*encoded_ply).score()));
+    pub fn sort(&mut self, search_info: &SearchInfo, ply_index: u64) {
+        self.moves.sort_by_key(|encoded_ply| {
+            // score the move based on MVV-LVA
+            let ply = Ply::decode(*encoded_ply);
+            let mut score = ply.score();
+
+            // check if move the move is a killer move
+            if ply.captured_piece.is_none() {
+                // first killer move
+                if search_info.killer_moves[0][ply_index as usize] == ply {
+                    score += 70;
+                }
+                // second killer move
+                else if search_info.killer_moves[1][ply_index as usize] == ply {
+                    score += 50;
+                }
+            }
+
+            Reverse(score)
+        });
     }
     
     /// Returns a new move list that only contains capture moves.
@@ -64,6 +83,7 @@ mod tests {
     use crate::board::square;
     use crate::move_gen::move_list::MoveList;
     use crate::move_gen::ply::Ply;
+    use crate::search::SearchInfo;
 
     #[test]
     fn test_move_list() {
@@ -106,6 +126,8 @@ mod tests {
     
     #[test]
     fn test_sort() {
+        let search_info = SearchInfo::default();
+        
         let ply1 = Ply {source: square::A1, target: square::A2, piece: Piece::Rook, captured_piece: None, promotion_piece: None};
         let ply2 = Ply {source: square::H8, target: square::A8, piece: Piece::Rook, captured_piece: Some(Piece::Rook), promotion_piece: None};
         let ply3 = Ply {source: square::E4, target: square::D5, piece: Piece::Pawn, captured_piece: Some(Piece::Pawn), promotion_piece: None};
@@ -122,7 +144,7 @@ mod tests {
         
         assert_eq!(5, move_list.len());
         
-        move_list.sort();
+        move_list.sort(&search_info, 0);
 
         assert_eq!(5, move_list.len());
         

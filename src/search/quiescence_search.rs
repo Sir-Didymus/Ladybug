@@ -8,7 +8,7 @@ impl Search {
     /// to the negamax function, but instead of looking at all moves, it only looks at captures.
     /// It also uses something called a "standing pat", which is initialized with the static evaluation and is
     /// used to cause beta-cutoffs earlier, thus reducing the number of nodes searched.
-    pub fn quiescence_search(&mut self, position: Position, mut alpha: i32, beta: i32, time_limit: Duration) -> i32 {
+    pub fn quiescence_search(&mut self, position: Position, ply_index: u64, mut alpha: i32, beta: i32, time_limit: Duration) -> i32 {
         // check if the time limit is reached
         if let Some(instant) = self.total_time {
             if instant.elapsed() > time_limit {
@@ -37,14 +37,17 @@ impl Search {
         }
         
         // generate all legal capture moves for the current position
-        let capture_list = move_gen::generate_moves(position).get_captures();
+        let mut capture_list = move_gen::generate_moves(position).get_captures();
+
+        // sort the capture list
+        capture_list.sort(&self.search_info, ply_index);
 
         // iterate over all capture moves and call the quiescence search recursively for the arising positions
         for i in 0..capture_list.len() {
             let ply = capture_list.get(i);
 
             // the score of the new position
-            let score = -self.quiescence_search(position.make_move(ply), -beta, -alpha, time_limit);
+            let score = -self.quiescence_search(position.make_move(ply), ply_index + 1, -beta, -alpha, time_limit);
 
             // fail-hard beta cutoff
             if score >= beta {

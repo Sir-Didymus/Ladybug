@@ -87,7 +87,10 @@ impl Search {
         self.search_info.pv_length[ply_index as usize] = ply_index as u8;
 
         // generate all legal moves for the current position
-        let move_list = move_gen::generate_moves(position);
+        let mut move_list = move_gen::generate_moves(position);
+
+        // sort the  move list
+        move_list.sort(&self.search_info, ply_index);
 
         // if there are no legal moves, check for mate or stalemate
         if move_list.is_empty() {
@@ -104,7 +107,7 @@ impl Search {
 
         // if depth 0 is reached, start the quiescence search
         if depth == 0 {
-            return self.quiescence_search(position, alpha, beta, time_limit);
+            return self.quiescence_search(position, ply_index, alpha, beta, time_limit);
         }
 
         // iterate over all possible moves and call negamax recursively for the arising positions
@@ -117,6 +120,11 @@ impl Search {
             // fail-hard beta cutoff
             if score >= beta {
                 // move fails high - the opponent won't allow this move because it's too good
+
+                // store the killer moves
+                self.search_info.killer_moves[1][ply_index as usize] =  self.search_info.killer_moves[0][ply_index as usize];
+                self.search_info.killer_moves[0][ply_index as usize] = ply;
+
                 return beta;
             }
             
