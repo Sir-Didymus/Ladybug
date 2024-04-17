@@ -47,7 +47,7 @@ impl MoveList {
             let ply = Ply::decode(*encoded_ply);
             let mut score = ply.score();
 
-            // check if move the move is a killer move
+            // check if move the move is quiet, if yes, apply move ordering heuristics
             if ply.captured_piece.is_none() {
                 // first killer move
                 if search_info.killer_moves[0][ply_index as usize] == ply {
@@ -56,6 +56,10 @@ impl MoveList {
                 // second killer move
                 else if search_info.killer_moves[1][ply_index as usize] == ply {
                     score += 50;
+                } 
+                // history move
+                else {
+                    score += search_info.history_moves[ply.piece.to_index() as usize][ply.target.index as usize];
                 }
             }
 

@@ -121,10 +121,12 @@ impl Search {
             if score >= beta {
                 // move fails high - the opponent won't allow this move because it's too good
 
-                // store the killer moves
-                self.search_info.killer_moves[1][ply_index as usize] =  self.search_info.killer_moves[0][ply_index as usize];
-                self.search_info.killer_moves[0][ply_index as usize] = ply;
-
+                // check if move is a quiet move
+                if ply.captured_piece.is_none() {
+                    // store the killer moves
+                    self.search_info.killer_moves[1][ply_index as usize] = self.search_info.killer_moves[0][ply_index as usize];
+                    self.search_info.killer_moves[0][ply_index as usize] = ply;
+                }
                 return beta;
             }
             
@@ -132,6 +134,13 @@ impl Search {
             if score > alpha {
                 // update alpha to the better score
                 alpha = score;
+                
+                // check if move is a quiet move
+                if ply.captured_piece.is_none() {
+                    // store history move bonus
+                    // moves closer to the root get a bigger bonus
+                    self.search_info.history_moves[ply.piece.to_index() as usize][ply.target.index as usize] = depth as i32;
+                }
 
                 // update the pv table
                 self.search_info.pv_table[ply_index as usize][ply_index as usize] = ply;

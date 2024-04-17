@@ -1,6 +1,8 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
+use crate::board::piece::NUM_PIECES;
 use crate::board::position::Position;
+use crate::board::square::NUM_SQUARES;
 use crate::ladybug::Message;
 use crate::move_gen;
 use crate::move_gen::ply::Ply;
@@ -50,6 +52,8 @@ pub struct SearchInfo {
     /// The search can store up to two killer moves per depth.
     /// Killer moves are quiet moves that caused a beta-cutoff in a similar position, and are worth searching first.
     pub killer_moves: [[Ply; MAX_PLY]; 2],
+    /// Stores the history moves. These are moves that increased alpha in other positions, and are worth searching first.
+    pub history_moves: [[i32; NUM_SQUARES as usize]; NUM_PIECES as usize],
 }
 
 impl Default for SearchInfo {
@@ -62,6 +66,7 @@ impl Default for SearchInfo {
             pv_table: [[Ply::default(); MAX_PLY];MAX_PLY],
             // initialize the killer moves with null moves (a1 to a1)
             killer_moves: [[Ply::default(); MAX_PLY]; 2],
+            history_moves: [[0; NUM_SQUARES as usize]; NUM_PIECES as usize],
         }
     }
 }
@@ -78,6 +83,7 @@ impl SearchInfo {
     pub fn clear_all(&mut self) {
         self.clear_iteration();
         self.killer_moves = [[Ply::default(); MAX_PLY]; 2];
+        self.history_moves = [[0; NUM_SQUARES as usize]; NUM_PIECES as usize];
     }
 }
 
@@ -155,8 +161,9 @@ impl Search {
 
 #[cfg(test)]
 mod tests {
-    use crate::board::piece::Piece;
+    use crate::board::piece::{NUM_PIECES, Piece};
     use crate::board::square;
+    use crate::board::square::NUM_SQUARES;
     use crate::move_gen::ply::Ply;
     use crate::search::{MAX_PLY, SearchInfo};
 
@@ -167,6 +174,7 @@ mod tests {
         assert_eq!([0; MAX_PLY], search_info.pv_length);
         assert_eq!([[Ply::default(); MAX_PLY];MAX_PLY], search_info.pv_table);
         assert_eq!([[Ply::default(); MAX_PLY]; 2], search_info.killer_moves);
+        assert_eq!([[0; NUM_SQUARES as usize]; NUM_PIECES as usize], search_info.history_moves);
     }
 
     #[test]
@@ -189,18 +197,20 @@ mod tests {
             promotion_piece: None,
         };
         search_info.killer_moves[0][5] = killer_move;
+        search_info.history_moves[2][13] = 40;
 
         search_info.clear_iteration();
-        
+
         // these should be cleared
         assert_eq!(0, search_info.node_count);
         assert_eq!([0; MAX_PLY], search_info.pv_length);
         assert_eq!([[Ply::default(); MAX_PLY];MAX_PLY], search_info.pv_table);
-        
+
         // this should stay the same
         assert_eq!(killer_move, search_info.killer_moves[0][5]);
+        assert_eq!(40, search_info.history_moves[2][13]);
     }
-    
+
     #[test]
     fn test_search_info_clear_all() {
         let mut search_info = SearchInfo::default();
@@ -211,9 +221,10 @@ mod tests {
             captured_piece: None,
             promotion_piece: None,
         };
-        
+
         search_info.clear_all();
 
         assert_eq!([[Ply::default(); MAX_PLY]; 2], search_info.killer_moves);
+        assert_eq!([[0; NUM_SQUARES as usize]; NUM_PIECES as usize], search_info.history_moves);
     }
 }
