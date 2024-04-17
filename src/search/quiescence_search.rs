@@ -19,10 +19,10 @@ impl Search {
         }
 
         // increment the number of nodes searched
-        self.node_count += 1;
-        
+        self.search_info.node_count += 1;
+
         // Establish the lower bound of the score with the static evaluation
-        let standing_pat = evaluation::evaluate(position);
+        let standing_pat = evaluation::evaluate(position); 
         
         // fail-hard beta cutoff
         if standing_pat >= beta {

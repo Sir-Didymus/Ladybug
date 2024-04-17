@@ -31,16 +31,54 @@ pub struct Search {
     command_receiver: Receiver<SearchCommand>,
     /// Used to send search results to Ladybug.
     message_sender: Sender<Message>,
-    /// The number of nodes evaluated during the current iteration of the search.
-    node_count: u128,
     /// Used to measure the total expired time across all iterations during search.
     total_time: Option<Instant>,
-    /// Stores the lengths of the principe variations.
-    pv_length: [u8; MAX_PLY],
-    /// Stores the principle variations.
-    pv_table: [[Ply; MAX_PLY]; MAX_PLY],
     /// Flag to signal that the search should stop immediately.
     stop: bool,
+    /// Contains information collected and used during the search.
+    search_info: SearchInfo,
+}
+
+/// Contains information collected and used during the search.
+pub struct SearchInfo {
+    /// The number of nodes evaluated during the current iteration of the search.
+    pub node_count: u128,
+    /// Stores the lengths of the principe variations.
+    pub pv_length: [u8; MAX_PLY],
+    /// Stores the principle variations.
+    pub pv_table: [[Ply; MAX_PLY]; MAX_PLY],
+    /// The search can store up to two killer moves per depth.
+    /// Killer moves are quiet moves that caused a beta-cutoff in a similar position, and are worth searching first.
+    pub killer_moves: [[Ply; MAX_PLY]; 2],
+}
+
+impl Default for SearchInfo {
+    /// Default constructor for `SearchInfo`.
+    fn default() -> Self {
+        Self {
+            node_count: 0,
+            pv_length: [0; MAX_PLY],
+            // initialize the pv table with null moves (a1 to a1)
+            pv_table: [[Ply::default(); MAX_PLY];MAX_PLY],
+            // initialize the killer moves with null moves (a1 to a1)
+            killer_moves: [[Ply::default(); MAX_PLY]; 2],
+        }
+    }
+}
+
+impl SearchInfo {
+    /// Clears the search information that is not relevant for the next iteration.
+    pub fn clear_iteration(&mut self) {
+        self.node_count = 0;
+        self.pv_length = [0; MAX_PLY];
+        self.pv_table = [[Ply::default(); MAX_PLY]; MAX_PLY];
+    }
+
+    /// Clears all search information.
+    pub fn clear_all(&mut self) {
+        self.clear_iteration();
+        self.killer_moves = [[Ply::default(); MAX_PLY]; 2];
+    }
 }
 
 impl Search {
@@ -49,12 +87,9 @@ impl Search {
         Self {
             command_receiver: input_receiver,
             message_sender: output_sender,
-            node_count: 0,
             total_time: None,
-            pv_length: [0; MAX_PLY],
-            // initialize the pv table with null moves (a1 to a1)
-            pv_table: [[Ply::default(); MAX_PLY];MAX_PLY],
             stop: true,
+            search_info: SearchInfo::default(),
         }
     }
 
@@ -115,5 +150,70 @@ impl Search {
     /// Handles the "Perft" command.
     fn handle_perft(&self, position: Position, depth: u64) {
         self.perft(position, depth);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::board::piece::Piece;
+    use crate::board::square;
+    use crate::move_gen::ply::Ply;
+    use crate::search::{MAX_PLY, SearchInfo};
+
+    #[test]
+    fn test_default() {
+        let search_info = SearchInfo::default();
+        assert_eq!(0, search_info.node_count);
+        assert_eq!([0; MAX_PLY], search_info.pv_length);
+        assert_eq!([[Ply::default(); MAX_PLY];MAX_PLY], search_info.pv_table);
+        assert_eq!([[Ply::default(); MAX_PLY]; 2], search_info.killer_moves);
+    }
+
+    #[test]
+    fn test_search_info_clear_iteration() {
+        let mut search_info = SearchInfo::default();
+        search_info.node_count = 50000;
+        search_info.pv_length[0] = 5;
+        search_info.pv_table[4][4] = Ply {
+            source: square::E2,
+            target: square::E8,
+            piece: Piece::Rook,
+            captured_piece: None,
+            promotion_piece: None,
+        };
+        let killer_move = Ply {
+            source: square::H7,
+            target: square::H8,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        };
+        search_info.killer_moves[0][5] = killer_move;
+
+        search_info.clear_iteration();
+        
+        // these should be cleared
+        assert_eq!(0, search_info.node_count);
+        assert_eq!([0; MAX_PLY], search_info.pv_length);
+        assert_eq!([[Ply::default(); MAX_PLY];MAX_PLY], search_info.pv_table);
+        
+        // this should stay the same
+        assert_eq!(killer_move, search_info.killer_moves[0][5]);
+    }
+    
+    #[test]
+    fn test_search_info_clear_all() {
+        let mut search_info = SearchInfo::default();
+        search_info.killer_moves[0][4] = Ply {
+            source: square::H7,
+            target: square::H8,
+            piece: Piece::Pawn,
+            captured_piece: None,
+            promotion_piece: None,
+        };
+        
+        search_info.clear_all();
+
+        assert_eq!([[Ply::default(); MAX_PLY]; 2], search_info.killer_moves);
     }
 }

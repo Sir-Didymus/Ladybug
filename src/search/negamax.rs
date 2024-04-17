@@ -2,7 +2,6 @@ use std::time::Duration;
 use crate::board::position::Position;
 use crate::{evaluation, move_gen};
 use crate::evaluation::{NEGATIVE_INFINITY, POSITIVE_INFINITY};
-use crate::move_gen::ply::Ply;
 use crate::search::{MAX_PLY, Search};
 
 impl Search {
@@ -19,9 +18,6 @@ impl Search {
 
         // start at depth 1 and increment the depth until the max depth is reached or the time runs out
         for depth in 1..=max_depth {
-            // set the node count to 0
-            self.node_count = 0;
-
             // set the start time for this iteration
             let iteration_time = std::time::Instant::now();
             
@@ -37,36 +33,34 @@ impl Search {
             let mut nps: u128 = 0;
             let iteration_time_elapsed = iteration_time.elapsed().as_millis();
             if iteration_time_elapsed > 0 {
-                nps = (self.node_count / iteration_time_elapsed) * 1000;
+                nps = (self.search_info.node_count / iteration_time_elapsed) * 1000;
             }
             else {
-                nps = self.node_count;
+                nps = self.search_info.node_count;
             }
-            
 
             // send the information for the current iteration
-            let mut output = format!("info depth {depth} score cp {score} nodes {nodes} time {iteration_time_elapsed} nps {nps} pv", nodes = self.node_count);
-            for ply_num in 0..self.pv_length[0] {
-                output += format!(" {}", self.pv_table[0][ply_num as usize]).as_str();
+            let mut output = format!("info depth {depth} score cp {score} nodes {nodes} time {iteration_time_elapsed} nps {nps} pv", nodes = self.search_info.node_count);
+            for ply_num in 0..self.search_info.pv_length[0] {
+                output += format!(" {}", self.search_info.pv_table[0][ply_num as usize]).as_str();
             }
             self.send_output(output);
 
             // set the best move to the result of this iteration
-            best_move = self.pv_table[0][0];
+            best_move = self.search_info.pv_table[0][0];
+
+            // clear the search info for this iteration
+            self.search_info.clear_iteration();
         }
 
         // send the best move to the main thread
         self.send_output(format!("bestmove {}", best_move));
 
-        // reset the timer
+        // reset the total time
         self.total_time = None;
 
-        // reset the node count
-        self.node_count = 0;
-
-        // reset the pv length and pv table arrays
-        self.pv_length = [0; MAX_PLY];
-        self.pv_table = [[Ply::default(); MAX_PLY]; MAX_PLY];
+        // clear all search info
+        self.search_info.clear_all();
     }
 
     /// A basic implementation of the [negamax](https://www.chessprogramming.org/Negamax) algorithm with alpha beta pruning.
@@ -89,8 +83,8 @@ impl Search {
             }
         }
 
-        // initialize the pv length
-        self.pv_length[ply_index as usize] = ply_index as u8;
+        // set the pv length
+        self.search_info.pv_length[ply_index as usize] = ply_index as u8;
 
         // generate all legal moves for the current position
         let move_list = move_gen::generate_moves(position);
@@ -132,11 +126,11 @@ impl Search {
                 alpha = score;
 
                 // update the pv table
-                self.pv_table[ply_index as usize][ply_index as usize] = ply;
-                for next_ply_index in (ply_index + 1) as u8..self.pv_length[ply_index as usize + 1] {
-                    self.pv_table[ply_index as usize][next_ply_index as usize] = self.pv_table[ply_index as usize + 1][next_ply_index as usize];
+                self.search_info.pv_table[ply_index as usize][ply_index as usize] = ply;
+                for next_ply_index in (ply_index + 1) as u8..self.search_info.pv_length[ply_index as usize + 1] {
+                    self.search_info.pv_table[ply_index as usize][next_ply_index as usize] = self.search_info.pv_table[ply_index as usize + 1][next_ply_index as usize];
                 }
-                self.pv_length[ply_index as usize] = self.pv_length[ply_index as usize + 1];
+                self.search_info.pv_length[ply_index as usize] = self.search_info.pv_length[ply_index as usize + 1];
             }
             
             // move fails low
