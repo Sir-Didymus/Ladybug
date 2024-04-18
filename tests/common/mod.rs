@@ -20,6 +20,7 @@ pub fn assert_result(receiver: &Receiver<String>, depth: u8 , expected: &str) {
     }
 }
 
+/// Helper function to send the given fen string to Ladybug and tell her to search to the given depth.
 pub fn go_position(sender: &Sender<Message>, fen: &str, depth: u8) {
     let go_command = format!("position fen {fen}");
     let _ = sender.send(Message::ConsoleMessage(go_command));

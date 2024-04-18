@@ -1,6 +1,82 @@
+//! This module contains the random numbers used for zobrist hashing.
+
+use crate::board::castling_rights::CastlingRights;
+use crate::board::color::Color;
+use crate::board::file::File;
+use crate::board::piece::Piece;
+use crate::board::square::Square;
+
+/// The offset for pieces.
+const RANDOM_PIECE_OFFSET: usize = 0;
+
+/// The offset for castling rights.
+const RANDOM_CASTLE_OFFSET: usize = 768;
+
+/// The offset for en passant target files.
+const RANDOM_EN_PASSANT_OFFSET: usize = 772;
+
+/// The offset for turn.
+const RANDOM_TURN_OFFSET: usize = 780;
+
+/// Returns a random number for a piece of a given color on a given square.
+pub (super) fn get_random_piece(piece: Piece, color: Color, square: Square) -> u64 {
+    let kind_of_piece = match color {
+        Color::White => ((piece.to_index() * 2) + 1) as usize,
+        Color::Black => (piece.to_index() * 2) as usize,
+    };
+
+    let offset_piece = RANDOM_PIECE_OFFSET + 64 * kind_of_piece + square.index as usize;
+    
+    RANDOM64[offset_piece]
+}
+
+/// Returns a random number for the given combination of castling rights.
+pub (super) fn get_random_castle(castling_rights_white: CastlingRights, castling_rights_black: CastlingRights) -> u64 {
+    let mut castle = 0;
+    
+    // white kingside
+    if castling_rights_white == CastlingRights::KingSide || castling_rights_white == CastlingRights::Both {
+        castle ^= RANDOM64[RANDOM_CASTLE_OFFSET];
+    }
+    // white queenside
+    if castling_rights_white == CastlingRights::QueenSide || castling_rights_white == CastlingRights::Both {
+        castle ^= RANDOM64[RANDOM_CASTLE_OFFSET + 1];
+    }
+    // black kingside
+    if castling_rights_black == CastlingRights::KingSide || castling_rights_black == CastlingRights::Both {
+        castle ^= RANDOM64[RANDOM_CASTLE_OFFSET + 2];
+    }
+    // black queenside
+    if castling_rights_black == CastlingRights::QueenSide || castling_rights_black == CastlingRights::Both {
+        castle ^= RANDOM64[RANDOM_CASTLE_OFFSET + 3];
+    }
+    
+    castle
+}
+
+/// Returns a random number for the given target en passant file.
+pub (super) fn get_random_en_passant(target_file: Option<File>) -> u64 {
+    match target_file {
+        None => 0,
+        Some(file) => {
+            let offset_en_passant = file.to_index() as usize;
+            RANDOM64[RANDOM_EN_PASSANT_OFFSET + offset_en_passant]
+        }
+    }
+}
+
+/// Returns a random number for the color to move.
+pub(super) fn get_random_turn(color: Color) -> u64 {
+    match color {
+        Color::White => RANDOM64[RANDOM_TURN_OFFSET],
+        Color::Black => 0,
+    }
+}
+
 /// This array contains the random numbers used for hashing chess positions.
 /// They are not really random in that they are taken directly from the polyglot book format.
 /// This has the advantage of directly supporting polyglot opening books out of the box.
+/// See http://hgm.nubati.net/book_format.html.
 pub (super) const RANDOM64: [u64; 781] = [
     0x9D39247E33776D41, 0x2AF7398005AAA5C7, 0x44DB015024623547, 0x9C15F73E62A76AE2,
     0x75834465489C0C89, 0x3290AC3A203001BF, 0x0FBBAD1F61042279, 0xE83A908FF2FB60CA,
