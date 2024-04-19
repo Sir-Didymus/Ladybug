@@ -33,10 +33,10 @@ pub struct Position {
     //-------------------------------------------------------------------------------------------
     // fields not necessary to uniquely identify a chess position, but convenient
     //-------------------------------------------------------------------------------------------
-    
+
     /// The zobrist hash key of the position.
     pub hash: u64,
-    
+
     /// The attack_bbs for White's and Black's pieces.
     attack_bb: [Bitboard; 2],
 }
@@ -210,6 +210,37 @@ impl Position {
             position.remove_piece(piece, self.color_to_move.other(), ply.target);
             // update hash
             position.hash ^= zobrist::random::get_random_piece(piece, self.color_to_move.other(), ply.target);
+
+            // if the captured piece was a rook on its starting square, remove castling rights of opponent for the rooks side (queenside or kingside)
+            if ply.captured_piece == Some(Piece::Rook) && ply.target.get_rank() == position.color_to_move.other().back_rank() {
+                match ply.target.get_file() {
+                    File::A => {
+                        // remove queenside castling rights
+                        if self.castling_rights[self.color_to_move.other().to_index() as usize] == CastlingRights::KingSide || self.castling_rights[self.color_to_move.other().to_index() as usize] == CastlingRights::Both {
+                            position.castling_rights[self.color_to_move.other().to_index() as usize] = CastlingRights::KingSide;
+                        } else {
+                            position.castling_rights[self.color_to_move.other().to_index() as usize] = CastlingRights::NoRights;
+                        }
+                        // update hash
+                        if self.castling_rights[self.color_to_move.other().to_index() as usize] == CastlingRights::QueenSide || self.castling_rights[self.color_to_move.other().to_index() as usize] == CastlingRights::Both {
+                            position.hash ^= zobrist::random::get_random_castling(CastlingRights::QueenSide, self.color_to_move.other());
+                        }
+                    }
+                    File::H => {
+                        // remove kingside castling rights
+                        if self.castling_rights[self.color_to_move.other().to_index() as usize] == CastlingRights::QueenSide || self.castling_rights[self.color_to_move.other().to_index() as usize] == CastlingRights::Both {
+                            position.castling_rights[self.color_to_move.other().to_index() as usize] = CastlingRights::QueenSide;
+                        } else {
+                            position.castling_rights[self.color_to_move.other().to_index() as usize] = CastlingRights::NoRights;
+                        }
+                        // update hash
+                        if self.castling_rights[self.color_to_move.other().to_index() as usize] == CastlingRights::KingSide || self.castling_rights[self.color_to_move.other().to_index() as usize] == CastlingRights::Both {
+                            position.hash ^= zobrist::random::get_random_castling(CastlingRights::KingSide, self.color_to_move.other());
+                        }
+                    }
+                    _other => {}
+                }
+            }
         }
 
         // -----------------------------------------------------------------------------------------------------------------------
@@ -314,9 +345,9 @@ impl Position {
                 _other => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::NoRights,
             }
             // update hash
-           if self.castling_rights[self.color_to_move as usize] == CastlingRights::QueenSide || self.castling_rights[self.color_to_move as usize] == CastlingRights::Both {
-               position.hash ^= zobrist::random::get_random_castling(CastlingRights::QueenSide, self.color_to_move);
-           }
+            if self.castling_rights[self.color_to_move as usize] == CastlingRights::QueenSide || self.castling_rights[self.color_to_move as usize] == CastlingRights::Both {
+                position.hash ^= zobrist::random::get_random_castling(CastlingRights::QueenSide, self.color_to_move);
+            }
         } else if ply.piece == Piece::Rook && ply.source == Square::from_file_rank(File::H, self.color_to_move.back_rank()) {
             // move is H file rook move - remove kingside rights
             match self.castling_rights[self.color_to_move.to_index() as usize] {
@@ -374,7 +405,7 @@ impl Position {
             self.attack_bb[color_index as usize] = attack_bb;
         }
     }
-    
+
     /// Returns the number of pieces of the given type and color.
     pub fn get_num_pieces(&self, piece: Piece, color: Color) -> u8 {
         self.pieces[color.to_index() as usize][piece.to_index() as usize].get_num_active_bits()
@@ -1153,13 +1184,13 @@ mod tests {
         println!("{position}");
         assert_eq!(Board::from_fen("r1b1kbnr/1pp3pp/p1n5/4Bp2/2P4q/1P2PP2/P2P2PP/RN1QKB1R b KQkq - 1 8").unwrap().position, position);
     }
-    
+
     #[test]
     fn test_get_num_pieces() {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
-        
+
         let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
         assert_eq!(8, position.get_num_pieces(Piece::Pawn, Color::White));
         assert_eq!(8, position.get_num_pieces(Piece::Pawn, Color::Black));
