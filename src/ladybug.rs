@@ -274,7 +274,7 @@ impl Ladybug {
         
         let time = (time / 40) + increment;
         
-        self.send_search(SearchCommand::SearchTime(self.game.board, time));
+        self.send_search(SearchCommand::SearchTime(self.game.board, self.game.board_history.clone(), time));
     }
 
     /// Handles the "go movetime <time>" command.
@@ -285,7 +285,7 @@ impl Ladybug {
                 self.send_console(String::from("info string unknown command"));
             }
             Ok(time) => {
-                self.send_search(SearchCommand::SearchTime(self.game.board, time));
+                self.send_search(SearchCommand::SearchTime(self.game.board, self.game.board_history.clone(), time));
             }
         }
     }
@@ -298,7 +298,7 @@ impl Ladybug {
                 self.send_console(String::from("info string unknown command"));
             }
             Ok(depth) => {
-                self.send_search(SearchCommand::SearchDepth(self.game.board, depth));
+                self.send_search(SearchCommand::SearchDepth(self.game.board, self.game.board_history.clone(), depth));
             }
         }
     }

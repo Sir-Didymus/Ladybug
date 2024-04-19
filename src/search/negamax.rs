@@ -1,4 +1,7 @@
+#![allow(clippy::too_many_arguments)]
+
 use std::time::Duration;
+use arrayvec::ArrayVec;
 use crate::{evaluation, move_gen};
 use crate::board::Board;
 use crate::evaluation::{NEGATIVE_INFINITY, POSITIVE_INFINITY};
@@ -6,7 +9,7 @@ use crate::search::{MAX_PLY, Search};
 
 impl Search {
     /// Search the given position with iterative deepening.
-    pub fn iterative_search(&mut self, board: Board, max_depth: u64, time_limit: Duration) {
+    pub fn iterative_search(&mut self, board: Board, max_depth: u64, time_limit: Duration, mut board_history: ArrayVec<u64, 300>) {
         // reset the stop flag to allow searching
         self.stop = false;
 
@@ -22,7 +25,7 @@ impl Search {
             let iteration_time = std::time::Instant::now();
             
             // search to the current depth and save the score
-            let score = self.negamax(board, depth, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY, time_limit);
+            let score = self.negamax(board, depth, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY, time_limit, &mut board_history);
 
             if self.stop {
                 // if the stop flag is set, break out of iterative deepening immediately
@@ -67,7 +70,7 @@ impl Search {
     ///
     /// Instead of implementing two routines for the maximizing and minimizing players, this method
     /// negates the scores for each recursive call, making minimax easier to implement.
-    pub fn negamax(&mut self, board: Board, depth: u64, ply_index: u64, mut alpha: i32, beta: i32, time_limit: Duration) -> i32 {
+    pub fn negamax(&mut self, board: Board, depth: u64, ply_index: u64, mut alpha: i32, beta: i32, time_limit: Duration, board_history: &mut ArrayVec<u64, 300>) -> i32 {
         // check if the max ply number is reached
         if ply_index as usize >= MAX_PLY {
             // the maximum number of plies is reached - return static evaluation to avoid overflows
@@ -115,7 +118,7 @@ impl Search {
             let ply = move_list.get(i);
             
             // the score of the new position
-            let score = -self.negamax(board.make_move(ply), depth - 1, ply_index + 1, -beta, -alpha, time_limit);
+            let score = -self.negamax(board.make_move(ply), depth - 1, ply_index + 1, -beta, -alpha, time_limit, board_history);
 
             // fail-hard beta cutoff
             if score >= beta {

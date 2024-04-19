@@ -1,5 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
+use arrayvec::ArrayVec;
 use crate::board::Board;
 use crate::board::piece::NUM_PIECES;
 use crate::board::position::Position;
@@ -19,9 +20,9 @@ pub const MAX_PLY: usize = 100;
 /// Encodes the commands the search can receive from Ladybug.
 pub enum SearchCommand {
     /// Search the given position for the given amount of milliseconds.
-    SearchTime(Board, u64),
+    SearchTime(Board, ArrayVec<u64, 300>, u64),
     /// Search the given position until the given depth is reached.
-    SearchDepth(Board, u64),
+    SearchDepth(Board, ArrayVec<u64, 300>, u64),
     /// Perform a perft for the given position up to the specified depth.
     Perft(Position, u64),
     /// Stop the search immediately.
@@ -119,8 +120,8 @@ impl Search {
             
             match command { 
                 SearchCommand::Perft(position, depth) => self.handle_perft(position, depth),
-                SearchCommand::SearchTime(board, time) => self.handle_search(board, None, Some(time)),
-                SearchCommand::SearchDepth(board, depth) => self.handle_search(board, Some(depth), None),
+                SearchCommand::SearchTime(board, board_history, time) => self.handle_search(board, None, Some(time), board_history),
+                SearchCommand::SearchDepth(board, board_history, depth) => self.handle_search(board, Some(depth), None, board_history),
                 _other => {},
             }
         }
@@ -137,7 +138,7 @@ impl Search {
     }
 
     /// Handles the various "Search" commands.
-    fn handle_search(&mut self, board: Board, depth_limit: Option<u64>, time_limit: Option<u64>) {
+    fn handle_search(&mut self, board: Board, depth_limit: Option<u64>, time_limit: Option<u64>, board_history: ArrayVec<u64, 300>) {
         let move_list = move_gen::generate_moves(board.position);
         if move_list.is_empty() {
             self.send_output(String::from("info string no legal moves"));
@@ -154,7 +155,7 @@ impl Search {
             Some(time) => Duration::from_millis(time),
         };
 
-        self.iterative_search(board, depth_limit, time_limit);
+        self.iterative_search(board, depth_limit, time_limit, board_history);
     }
     
     /// Handles the "Perft" command.

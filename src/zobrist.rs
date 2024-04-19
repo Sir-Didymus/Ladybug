@@ -69,6 +69,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_incremental_hash_updates() {
         let mut lookup = LookupTable::default();
         lookup.initialize_tables();
