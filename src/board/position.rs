@@ -10,6 +10,7 @@ use crate::board::square;
 use crate::board::square::Square;
 use crate::lookup::LOOKUP_TABLE;
 use crate::move_gen::ply::Ply;
+use crate::zobrist;
 
 /// This struct uniquely encodes a chess position.
 /// It contains 12 bitboards, one for each piece for each color.
@@ -32,7 +33,10 @@ pub struct Position {
     //-------------------------------------------------------------------------------------------
     // fields not necessary to uniquely identify a chess position, but convenient
     //-------------------------------------------------------------------------------------------
-
+    
+    /// The zobrist hash key of the position.
+    pub hash: u64,
+    
     /// The attack_bbs for White's and Black's pieces.
     attack_bb: [Bitboard; 2],
 }
@@ -46,8 +50,10 @@ impl Default for Position {
             castling_rights: [CastlingRights::NoRights; 2],
             en_passant: None,
             color_to_move: Color::White,
+            hash: 0,
             attack_bb: [Bitboard::new(0); 2],
         };
+        position.hash = zobrist::get_hash(&position);
         position.initialize_attack_bb();
         position
     }
@@ -71,8 +77,10 @@ impl Position {
             castling_rights,
             en_passant,
             color_to_move,
+            hash: 0,
             attack_bb: [Bitboard::new(0); 2],
         };
+        position.hash = zobrist::get_hash(&position);
         position.initialize_attack_bb();
         position
     }
@@ -188,66 +196,116 @@ impl Position {
     pub fn make_move(&self, ply: Ply) -> Position {
         let mut position = *self;
 
+        // -----------------------------------------------------------------------------------------------------------------------
         // remove piece from old position
+        // -----------------------------------------------------------------------------------------------------------------------
         position.remove_piece(ply.piece, self.color_to_move, ply.source);
+        // update hash
+        position.hash ^= zobrist::random::get_random_piece(ply.piece, self.color_to_move, ply.source);
 
+        // -----------------------------------------------------------------------------------------------------------------------
         // remove capture piece
-        if let Some(piece) = ply.captured_piece { position.remove_piece(piece, self.color_to_move.other(), ply.target) }
-
-        // set piece on new position
-        match ply.promotion_piece {
-            // move is a promotion - set promotion piece
-            Some(piece) => { position.set_piece(piece, self.color_to_move, ply.target) }
-            // move is not a promotion - set piece specified in ply
-            None => { position.set_piece(ply.piece, self.color_to_move, ply.target) }
+        // -----------------------------------------------------------------------------------------------------------------------
+        if let Some(piece) = ply.captured_piece {
+            position.remove_piece(piece, self.color_to_move.other(), ply.target);
+            // update hash
+            position.hash ^= zobrist::random::get_random_piece(piece, self.color_to_move.other(), ply.target);
         }
 
+        // -----------------------------------------------------------------------------------------------------------------------
+        // set piece on new position
+        // -----------------------------------------------------------------------------------------------------------------------
+        match ply.promotion_piece {
+            // move is a promotion - set promotion piece
+            Some(piece) => {
+                position.set_piece(piece, self.color_to_move, ply.target);
+                // update hash
+                position.hash ^= zobrist::random::get_random_piece(piece, self.color_to_move, ply.target);
+            }
+            // move is not a promotion - set piece specified in ply
+            None => {
+                position.set_piece(ply.piece, self.color_to_move, ply.target);
+                // update hash
+                position.hash ^= zobrist::random::get_random_piece(ply.piece, self.color_to_move, ply.target);
+            }
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------------
         // in case of castling, set the rook
+        // -----------------------------------------------------------------------------------------------------------------------
+        let mut rook_source: Option<Square> = None;
+        let mut rook_target: Option<Square> = None;
         if ply.piece == Piece::King {
             match (ply.source, ply.target) {
                 // black castles queenside
                 (square::E8, square::C8) => {
                     // remove rook from old position
                     position.remove_piece(Piece::Rook, self.color_to_move, square::A8);
+                    rook_source = Some(square::A8);
                     // set rook on new position
                     position.set_piece(Piece::Rook, self.color_to_move, square::D8);
+                    rook_target = Some(square::D8);
                 }
                 // black castles kingside
                 (square::E8, square::G8) => {
                     // remove rook from old position
                     position.remove_piece(Piece::Rook, self.color_to_move, square::H8);
+                    rook_source = Some(square::H8);
                     // set rook on new position
                     position.set_piece(Piece::Rook, self.color_to_move, square::F8);
+                    rook_target = Some(square::F8);
                 }
                 // white castles queenside
                 (square::E1, square::C1) => {
                     // remove rook from old position
                     position.remove_piece(Piece::Rook, self.color_to_move, square::A1);
+                    rook_source = Some(square::A1);
                     // set rook on new position
                     position.set_piece(Piece::Rook, self.color_to_move, square::D1);
+                    rook_target = Some(square::D1);
                 }
                 // white castles kingside
                 (square::E1, square::G1) => {
                     // remove rook from old position
                     position.remove_piece(Piece::Rook, self.color_to_move, square::H1);
+                    rook_source = Some(square::H1);
                     // set rook on new position
                     position.set_piece(Piece::Rook, self.color_to_move, square::F1);
+                    rook_target = Some(square::F1);
                 }
                 _other => {}
             }
-        }
-
-        // in case of en passant, remove opponent pawn from 4th or 5th rank
-        if let Some(square) = self.en_passant {
-            if ply.piece == Piece::Pawn && square == ply.target {
-                position.remove_piece(Piece::Pawn, self.color_to_move.other(), Square::from_file_rank(ply.target.get_file(), self.color_to_move.other().double_pawn_push_target_rank()))
+            if let Some(square) = rook_source {
+                // update hash
+                position.hash ^= zobrist::random::get_random_piece(Piece::Rook, self.color_to_move, square);
+            }
+            if let Some(square) = rook_target {
+                // update hash
+                position.hash ^= zobrist::random::get_random_piece(Piece::Rook, self.color_to_move, square);
             }
         }
 
+        // -----------------------------------------------------------------------------------------------------------------------
+        // in case of en passant, remove opponent pawn from 4th or 5th rank
+        // -----------------------------------------------------------------------------------------------------------------------
+        if let Some(square) = self.en_passant {
+            if ply.piece == Piece::Pawn && square == ply.target {
+                position.remove_piece(Piece::Pawn, self.color_to_move.other(), Square::from_file_rank(ply.target.get_file(), self.color_to_move.other().double_pawn_push_target_rank()));
+                // update hash
+                position.hash ^= zobrist::random::get_random_piece(Piece::Pawn, self.color_to_move.other(), Square::from_file_rank(ply.target.get_file(), self.color_to_move.other().double_pawn_push_target_rank()));
+                // move is en passant - restore wrongly removed pawn hash (on en passant target square)
+                position.hash ^= zobrist::random::get_random_piece(Piece::Pawn, self.color_to_move.other(), ply.target);
+            }
+        }
+
+        // -----------------------------------------------------------------------------------------------------------------------
         // update castling_rights
+        // -----------------------------------------------------------------------------------------------------------------------
         if ply.piece == King {
             // move is a king move - no rights
             position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::NoRights;
+            // update hash
+            position.hash ^= zobrist::random::get_random_castling(self.castling_rights[self.color_to_move.to_index() as usize], self.color_to_move);
         } else if ply.piece == Piece::Rook && ply.source == Square::from_file_rank(File::A, self.color_to_move.back_rank()) {
             // move is A file rook move - remove queenside rights
             match self.castling_rights[self.color_to_move.to_index() as usize] {
@@ -255,6 +313,10 @@ impl Position {
                 CastlingRights::KingSide => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::KingSide,
                 _other => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::NoRights,
             }
+            // update hash
+           if self.castling_rights[self.color_to_move as usize] == CastlingRights::QueenSide || self.castling_rights[self.color_to_move as usize] == CastlingRights::Both {
+               position.hash ^= zobrist::random::get_random_castling(CastlingRights::QueenSide, self.color_to_move);
+           }
         } else if ply.piece == Piece::Rook && ply.source == Square::from_file_rank(File::H, self.color_to_move.back_rank()) {
             // move is H file rook move - remove kingside rights
             match self.castling_rights[self.color_to_move.to_index() as usize] {
@@ -262,18 +324,35 @@ impl Position {
                 CastlingRights::QueenSide => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::QueenSide,
                 _other => position.castling_rights[self.color_to_move.to_index() as usize] = CastlingRights::NoRights,
             }
+            // update hash
+            if self.castling_rights[self.color_to_move as usize] == CastlingRights::KingSide || self.castling_rights[self.color_to_move as usize] == CastlingRights::Both {
+                position.hash ^= zobrist::random::get_random_castling(CastlingRights::KingSide, self.color_to_move);
+            }
         }
 
+        // -----------------------------------------------------------------------------------------------------------------------
         // update en_passant
+        // -----------------------------------------------------------------------------------------------------------------------
+        // update hash
+        if let Some(square) = self.en_passant {
+            // if the previous position had an en passant square set, remove it from the hash
+            position.hash ^= zobrist::random::get_random_en_passant(Some(square.get_file()));
+        }
         if ply.piece == Piece::Pawn && ply.source.get_rank() == self.color_to_move.pawn_rank() &&
             ply.target.get_rank() == self.color_to_move.double_pawn_push_target_rank() {
-            position.en_passant = Some(Square::from_file_rank(ply.source.get_file(), self.color_to_move.other().en_passant_target_rank()))
+            position.en_passant = Some(Square::from_file_rank(ply.source.get_file(), self.color_to_move.other().en_passant_target_rank()));
+            // update hash
+            position.hash ^= zobrist::random::get_random_en_passant(Some(ply.source.get_file()));
         } else {
             position.en_passant = None;
         }
 
+        // -----------------------------------------------------------------------------------------------------------------------
         // update color_to_move
+        // -----------------------------------------------------------------------------------------------------------------------
         position.color_to_move = self.color_to_move.other();
+        // update hash
+        position.hash ^= zobrist::random::get_random_turn(Color::White);
 
         // initialize the attack bitboards for the new position
         position.initialize_attack_bb();

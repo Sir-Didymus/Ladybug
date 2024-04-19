@@ -19,7 +19,7 @@ const RANDOM_EN_PASSANT_OFFSET: usize = 772;
 const RANDOM_TURN_OFFSET: usize = 780;
 
 /// Returns a random number for a piece of a given color on a given square.
-pub (super) fn get_random_piece(piece: Piece, color: Color, square: Square) -> u64 {
+pub fn get_random_piece(piece: Piece, color: Color, square: Square) -> u64 {
     let kind_of_piece = match color {
         Color::White => ((piece.to_index() * 2) + 1) as usize,
         Color::Black => (piece.to_index() * 2) as usize,
@@ -31,7 +31,7 @@ pub (super) fn get_random_piece(piece: Piece, color: Color, square: Square) -> u
 }
 
 /// Returns a random number for the given combination of castling rights.
-pub (super) fn get_random_castle(castling_rights_white: CastlingRights, castling_rights_black: CastlingRights) -> u64 {
+pub fn get_random_castle(castling_rights_white: CastlingRights, castling_rights_black: CastlingRights) -> u64 {
     let mut castle = 0;
     
     // white kingside
@@ -54,8 +54,28 @@ pub (super) fn get_random_castle(castling_rights_white: CastlingRights, castling
     castle
 }
 
+/// Returns a random number for the given castling rights of the given color.
+pub fn get_random_castling(castling_rights: CastlingRights, color: Color) -> u64 {
+    let mut castle = 0;
+    
+    let color_offset = match color {
+        Color::White => 0,
+        Color::Black => 2,
+    };
+    
+    if castling_rights == CastlingRights::KingSide || castling_rights == CastlingRights::Both {
+        castle ^= RANDOM64[RANDOM_CASTLE_OFFSET + color_offset];
+    }
+
+    if castling_rights == CastlingRights::QueenSide || castling_rights == CastlingRights::Both {
+        castle ^= RANDOM64[RANDOM_CASTLE_OFFSET + 1 + color_offset];
+    }
+
+    castle
+}
+
 /// Returns a random number for the given target en passant file.
-pub (super) fn get_random_en_passant(target_file: Option<File>) -> u64 {
+pub fn get_random_en_passant(target_file: Option<File>) -> u64 {
     match target_file {
         None => 0,
         Some(file) => {
@@ -66,7 +86,7 @@ pub (super) fn get_random_en_passant(target_file: Option<File>) -> u64 {
 }
 
 /// Returns a random number for the color to move.
-pub(super) fn get_random_turn(color: Color) -> u64 {
+pub fn get_random_turn(color: Color) -> u64 {
     match color {
         Color::White => RANDOM64[RANDOM_TURN_OFFSET],
         Color::Black => 0,
