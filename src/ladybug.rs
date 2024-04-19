@@ -1,4 +1,5 @@
 use std::sync::mpsc::{Receiver, Sender};
+use arrayvec::ArrayVec;
 use crate::board::Board;
 use crate::board::color::Color;
 use crate::move_gen::ply::Ply;
@@ -9,8 +10,8 @@ use crate::uci::{UciCommand};
 /// The main character in this project!
 /// The Ladybug struct acts as the UCI client and can receive and handle UCI commands.
 pub struct Ladybug {
-   /// The current board position.
-    board: Board,
+    /// The current game on which all searches and commands will be performed on.
+    game: Game,
     /// The current state of Ladybug.
     state: State,
     /// Used to send commands to the search thread.
@@ -21,23 +22,41 @@ pub struct Ladybug {
     input_receiver: Receiver<Message>,
 }
 
-/// The two types of messages ladybug can receive.
+/// Represents a game of chess, containing the current board as well as the board history.
+pub struct Game {
+    /// The current board.
+    board: Board,
+    /// Contains the hashes of all positions that have been on the board before.
+    board_history: ArrayVec<u64, 300>,
+}
+
+/// The two types of messages Ladybug can receive.
 pub enum Message {
     ConsoleMessage(String),
     SearchMessage(String),
 }
 
-/// The possible states of Ladybug.
+/// The two possible states of Ladybug.
 enum State {
     Idle,
-    GoPerft,
+    Busy,
+}
+
+impl Default for Game {
+    /// Default constructor for Game.
+    fn default() -> Self {
+        Game {
+            board: Board::default(),
+            board_history: ArrayVec::new(),
+        }
+    }
 }
 
 impl Ladybug {
     /// Constructs Ladybug.
     pub fn new(search_command_sender: Sender<SearchCommand>, console_output_sender: Sender<String>, input_receiver: Receiver<Message>) -> Self {
         Self {
-            board: Board::default(),
+            game: Game::default(),
             state: State::Idle,
             search_command_sender,
             console_output_sender,
@@ -134,11 +153,14 @@ impl Ladybug {
 
     /// Handles the "ucinewgame" command.
     fn hande_uci_new_game(&mut self) {
-        self.board = Board::default();
+        self.game = Game::default();
     }
     
     /// Handles the "position" command.
     fn handle_position(&mut self, args: Vec<String>) {
+        // reset the game
+        self.game = Game::default();
+        
         if args.is_empty() {
             self.send_console(String::from("info string unknown command"));
             return;
@@ -181,7 +203,7 @@ impl Ladybug {
         let moves_index = args.iter().position(|r| r == "moves");
         if moves_index.is_none() {
             // command contains no moves - finish
-            self.board = board;
+            self.game.board = board;
             return;
         }
         let moves_index = moves_index.unwrap() + 1;
@@ -194,15 +216,20 @@ impl Ladybug {
         for move_string in moves {
             let ply = Ply::from_string(move_string, board.position);
             match ply {
-                Some(ply) => board = board.make_move(ply),
+                Some(ply) => {
+                    self.game.board_history.push(board.position.hash);
+                    board = board.make_move(ply)
+                }
                 None => {
+                    // reset the game
+                    self.game = Game::default();
                     self.send_console(String::from("info string invalid moves"));
                     return;
                 }
             }
         }
 
-        self.board = board;
+        self.game.board = board;
     }
 
     /// Handles the "go wtime <time> btime <time>" command.
@@ -234,20 +261,20 @@ impl Ladybug {
             return;
         }
         
-        let time =  match self.board.position.color_to_move{
+        let time =  match self.game.board.position.color_to_move{
             Color::White => w_time.unwrap(),
             Color::Black => b_time.unwrap(),
         };
 
 
-        let increment =  match self.board.position.color_to_move{
+        let increment =  match self.game.board.position.color_to_move{
             Color::White => w_inc.unwrap(),
             Color::Black => b_inc.unwrap(),
         };
         
         let time = (time / 40) + increment;
         
-        self.send_search(SearchCommand::SearchTime(self.board, time));
+        self.send_search(SearchCommand::SearchTime(self.game.board, time));
     }
 
     /// Handles the "go movetime <time>" command.
@@ -258,7 +285,7 @@ impl Ladybug {
                 self.send_console(String::from("info string unknown command"));
             }
             Ok(time) => {
-                self.send_search(SearchCommand::SearchTime(self.board, time));
+                self.send_search(SearchCommand::SearchTime(self.game.board, time));
             }
         }
     }
@@ -271,7 +298,7 @@ impl Ladybug {
                 self.send_console(String::from("info string unknown command"));
             }
             Ok(depth) => {
-                self.send_search(SearchCommand::SearchDepth(self.board, depth));
+                self.send_search(SearchCommand::SearchDepth(self.game.board, depth));
             }
         }
     }
@@ -284,7 +311,7 @@ impl Ladybug {
                 self.send_console(String::from("info string unknown command"));
             }
             Ok(depth) => {
-                self.send_search(SearchCommand::Perft(self.board.position, depth));
+                self.send_search(SearchCommand::Perft(self.game.board.position, depth));
             }
         }
     }
@@ -312,7 +339,7 @@ impl Ladybug {
 
     /// Handles the "display" command.
     fn handle_display(&self) {
-        self.send_console(self.board.to_fen());
+        self.send_console(self.game.board.to_fen());
     }
 }
 
