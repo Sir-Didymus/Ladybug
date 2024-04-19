@@ -18,7 +18,7 @@ pub mod position;
 pub mod fen;
 
 /// The board struct holds the current position of the board.
-/// It also keeps track of the half-move (ply) history, the full move counter, the number of reversible half-moves (50 move rule),
+/// It also keeps track of the full move counter, the halfmove clock (50 move rule),
 /// and a list of all positions that have been on the board before (threefold repetition).
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Board {
@@ -56,6 +56,7 @@ impl Board {
         
         board.position = board.position.make_move(ply);
         
+        // update the halfmove clock
         if ply.piece != Piece::Pawn && ply.captured_piece.is_none() {
             // if the move is neither a pawn move nor a capture, increment the halfmove clock
             board.halfmove_clock += 1;
@@ -64,6 +65,7 @@ impl Board {
             board.halfmove_clock = 0;
         }
         
+        // update the fullmove counter
         if self.position.color_to_move == Color::Black {
             board.fullmove_counter += 1;
         }

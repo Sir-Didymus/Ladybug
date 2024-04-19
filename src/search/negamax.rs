@@ -1,12 +1,12 @@
 use std::time::Duration;
-use crate::board::position::Position;
 use crate::{evaluation, move_gen};
+use crate::board::Board;
 use crate::evaluation::{NEGATIVE_INFINITY, POSITIVE_INFINITY};
 use crate::search::{MAX_PLY, Search};
 
 impl Search {
     /// Search the given position with iterative deepening.
-    pub fn iterative_search(&mut self, position: Position, max_depth: u64, time_limit: Duration) {
+    pub fn iterative_search(&mut self, board: Board, max_depth: u64, time_limit: Duration) {
         // reset the stop flag to allow searching
         self.stop = false;
 
@@ -14,7 +14,7 @@ impl Search {
         self.total_time = Some(std::time::Instant::now());
 
         // initialize the best move to the first legal one, in case the search stops prematurely
-        let mut best_move = move_gen::generate_moves(position).get(0);
+        let mut best_move = move_gen::generate_moves(board.position).get(0);
 
         // start at depth 1 and increment the depth until the max depth is reached or the time runs out
         for depth in 1..=max_depth {
@@ -22,7 +22,7 @@ impl Search {
             let iteration_time = std::time::Instant::now();
             
             // search to the current depth and save the score
-            let score = self.negamax(position, depth, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY, time_limit);
+            let score = self.negamax(board, depth, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY, time_limit);
 
             if self.stop {
                 // if the stop flag is set, break out of iterative deepening immediately
@@ -67,11 +67,11 @@ impl Search {
     ///
     /// Instead of implementing two routines for the maximizing and minimizing players, this method
     /// negates the scores for each recursive call, making minimax easier to implement.
-    pub fn negamax(&mut self, position: Position, depth: u64, ply_index: u64, mut alpha: i32, beta: i32, time_limit: Duration) -> i32 {
+    pub fn negamax(&mut self, board: Board, depth: u64, ply_index: u64, mut alpha: i32, beta: i32, time_limit: Duration) -> i32 {
         // check if the max ply number is reached
         if ply_index as usize >= MAX_PLY {
             // the maximum number of plies is reached - return static evaluation to avoid overflows
-            return evaluation::evaluate(position);
+            return evaluation::evaluate(board.position);
         }
 
         // check if the time limit is reached
@@ -87,14 +87,14 @@ impl Search {
         self.search_info.pv_length[ply_index as usize] = ply_index as u8;
 
         // generate all legal moves for the current position
-        let mut move_list = move_gen::generate_moves(position);
+        let mut move_list = move_gen::generate_moves(board.position);
 
         // sort the  move list
         move_list.sort(&mut self.search_info, ply_index);
 
         // if there are no legal moves, check for mate or stalemate
         if move_list.is_empty() {
-            return if position.is_in_check(position.color_to_move) {
+            return if board.position.is_in_check(board.position.color_to_move) {
                 // In case of checkmate, return a large negative number.
                 // By adding a large number (larger than the worth of a queen) for each ply in the search tree, 
                 // and thus decreasing the penalty for getting checkmated, the engine is incentivised to sacrifice material in order to delay checkmate.
@@ -107,7 +107,7 @@ impl Search {
 
         // if depth 0 is reached, start the quiescence search
         if depth == 0 {
-            return self.quiescence_search(position, ply_index, alpha, beta, time_limit);
+            return self.quiescence_search(board.position, ply_index, alpha, beta, time_limit);
         }
 
         // iterate over all possible moves and call negamax recursively for the arising positions
@@ -115,7 +115,7 @@ impl Search {
             let ply = move_list.get(i);
             
             // the score of the new position
-            let score = -self.negamax(position.make_move(ply), depth - 1, ply_index + 1, -beta, -alpha, time_limit);
+            let score = -self.negamax(board.make_move(ply), depth - 1, ply_index + 1, -beta, -alpha, time_limit);
 
             // fail-hard beta cutoff
             if score >= beta {

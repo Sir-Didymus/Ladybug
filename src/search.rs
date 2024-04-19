@@ -1,5 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
+use crate::board::Board;
 use crate::board::piece::NUM_PIECES;
 use crate::board::position::Position;
 use crate::board::square::NUM_SQUARES;
@@ -18,9 +19,9 @@ pub const MAX_PLY: usize = 100;
 /// Encodes the commands the search can receive from Ladybug.
 pub enum SearchCommand {
     /// Search the given position for the given amount of milliseconds.
-    SearchTime(Position, u64),
+    SearchTime(Board, u64),
     /// Search the given position until the given depth is reached.
-    SearchDepth(Position, u64),
+    SearchDepth(Board, u64),
     /// Perform a perft for the given position up to the specified depth.
     Perft(Position, u64),
     /// Stop the search immediately.
@@ -118,8 +119,8 @@ impl Search {
             
             match command { 
                 SearchCommand::Perft(position, depth) => self.handle_perft(position, depth),
-                SearchCommand::SearchTime(position, time) => self.handle_search(position, None, Some(time)),
-                SearchCommand::SearchDepth(position, depth) => self.handle_search(position, Some(depth), None),
+                SearchCommand::SearchTime(board, time) => self.handle_search(board, None, Some(time)),
+                SearchCommand::SearchDepth(board, depth) => self.handle_search(board, Some(depth), None),
                 _other => {},
             }
         }
@@ -136,15 +137,15 @@ impl Search {
     }
 
     /// Handles the various "Search" commands.
-    fn handle_search(&mut self, position: Position, depth_limit: Option<u64>, time_limit: Option<u64>) {
-        let move_list = move_gen::generate_moves(position);
+    fn handle_search(&mut self, board: Board, depth_limit: Option<u64>, time_limit: Option<u64>) {
+        let move_list = move_gen::generate_moves(board.position);
         if move_list.is_empty() {
             self.send_output(String::from("info string no legal moves"));
             return;
         }
 
-        // check if a depth value was provided, if not, use a default depth limit of 100
-        let depth_limit = depth_limit.unwrap_or(100);
+        // check if a depth value was provided, if not, use max depth
+        let depth_limit = depth_limit.unwrap_or(MAX_PLY as u64);
 
         // check if a time limit was provided
         let time_limit = match time_limit {
@@ -153,7 +154,7 @@ impl Search {
             Some(time) => Duration::from_millis(time),
         };
 
-        self.iterative_search(position, depth_limit, time_limit);
+        self.iterative_search(board, depth_limit, time_limit);
     }
     
     /// Handles the "Perft" command.
