@@ -8,7 +8,7 @@ use ladybug::search::{Search, SearchCommand};
 
 /// Initializes the lookup table, spawns the input and output threads, and starts running Ladybug.
 fn main() {
-    println!("\nLadybug 0.4.0\n");
+    println!("\nLadybug 0.5.0\n");
 
     print!("Initializing tables... ");
 

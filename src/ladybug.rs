@@ -141,7 +141,7 @@ impl Ladybug {
 
     /// Handles the "uci" command.
     fn handle_uci(&self) {
-        self.send_console("id name Ladybug 0.4.0".to_string());
+        self.send_console("id name Ladybug 0.5.0".to_string());
         self.send_console("id author Felix O.".to_string());
         self.send_console(String::from("uciok"));
     }
@@ -333,8 +333,8 @@ impl Ladybug {
         self.send_console(String::from("go movetime <time>                                      : Search for the specified time"));
         self.send_console(String::from("go depth <depth>                                        : Search to the specified depth"));
         self.send_console(String::from("go perft <depth>                                        : Perform a perft test"));
-        self.send_console(String::from("quit                                                    : Quit Ladybug"));
         self.send_console(String::from("display                                                 : Print the fen of the current position"));
+        self.send_console(String::from("quit                                                    : Quit Ladybug"));
     }
 
     /// Handles the "display" command.
@@ -415,7 +415,7 @@ mod tests {
         let (input_sender, output_receiver) = setup();
 
         let _ = input_sender.send(ConsoleMessage(String::from("uci")));
-        assert_eq!("id name Ladybug 0.4.0", output_receiver.recv().unwrap());
+        assert_eq!("id name Ladybug 0.5.0", output_receiver.recv().unwrap());
         assert_eq!("id author Felix O.", output_receiver.recv().unwrap());
         assert_eq!("uciok", output_receiver.recv().unwrap());
     }
@@ -580,8 +580,8 @@ mod tests {
         assert_eq!("go movetime <time>                                      : Search for the specified time", output_receiver.recv().unwrap());
         assert_eq!("go depth <depth>                                        : Search to the specified depth", output_receiver.recv().unwrap());
         assert_eq!("go perft <depth>                                        : Perform a perft test", output_receiver.recv().unwrap());
-        assert_eq!("quit                                                    : Quit Ladybug", output_receiver.recv().unwrap());
         assert_eq!("display                                                 : Print the fen of the current position", output_receiver.recv().unwrap());
+        assert_eq!("quit                                                    : Quit Ladybug", output_receiver.recv().unwrap());
     }
 
     #[test]
