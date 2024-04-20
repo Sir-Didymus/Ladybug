@@ -2,6 +2,7 @@
 //! It contains the important position and bitboard submodules, as well other useful ones such as color, file, rank, and square.
 //! This module is the foundation on which the rest of the engine builds upon.
 
+use arrayvec::ArrayVec;
 use position::Position;
 use crate::board::color::Color;
 use crate::board::piece::Piece;
@@ -72,10 +73,33 @@ impl Board {
         
         board
     }
+    
+    /// Checks whether the position is a draw by threefold repetition, based on the given board history.
+    pub fn is_draw(&self, board_history: &ArrayVec<u64, 300>) -> bool {
+        if board_history.is_empty() {
+            return false;
+        }
+        
+        // loop over the board history from the end, but go no further back than the halfmove clock
+        // (captures and pawn moves reset the halfmove clock, so we don't have to look any further)
+        let mut repetition_count = 0;
+        let mut i = 0;
+        for hash in board_history.iter().rev() {
+            if *hash == self.position.hash {
+                repetition_count += 1;
+            }
+            i += 1;
+            if i > self.halfmove_clock {
+                break;
+            }
+        }
+        repetition_count >= 3
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use arrayvec::ArrayVec;
     use crate::board::bitboard::Bitboard;
     use crate::board::{Board, square};
     use crate::board::castling_rights::CastlingRights;
@@ -85,9 +109,14 @@ mod tests {
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
     use crate::move_gen::ply::Ply;
+    use crate::zobrist;
 
     #[test]
     fn default_returns_board_with_default_values() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
         let board = Board::default();
         assert_eq!(Position::default(), board.position);
         assert_eq!(0, board.halfmove_clock);
@@ -96,8 +125,9 @@ mod tests {
 
     #[test]
     fn from_fen_with_valid_fen_returns_board() {
-        let mut lookup_table = LookupTable::default();
-        lookup_table.initialize_tables();
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
 
         // -----------------------------------------------------------------------------------------
         // position 1
@@ -247,5 +277,22 @@ mod tests {
             promotion_piece: None,
         });
         assert_eq!(Board::from_fen("r1bqkb1r/pppppppp/2n2n2/3P4/8/2N5/PPP1PPPP/R1BQKB1R b KQkq - 0 5").unwrap(), board);
+    }
+    
+    #[test]
+    fn test_is_draw() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
+        let mut board_history: ArrayVec<u64, 300> = ArrayVec::new();
+        let board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 3 1").unwrap();
+        
+        board_history.push(zobrist::get_hash(&board.position));
+        board_history.push(zobrist::get_hash(&board.position));
+        assert!(!board.is_draw(&board_history));
+
+        board_history.push(zobrist::get_hash(&board.position));
+        assert!(board.is_draw(&board_history));
     }
 }

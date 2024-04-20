@@ -107,6 +107,11 @@ impl Search {
                 0
             };
         }
+        
+        // check if the position is a draw
+         if board.is_draw(board_history) {
+             return 0;
+         }
 
         // if depth 0 is reached, start the quiescence search
         if depth == 0 {
@@ -117,8 +122,17 @@ impl Search {
         for i in 0..move_list.len() {
             let ply = move_list.get(i);
             
+            // make the move
+            let new_board = board.make_move(ply);
+            
+            // push the new position's hash to the board history
+            board_history.push(new_board.position.hash);
+            
             // the score of the new position
-            let score = -self.negamax(board.make_move(ply), depth - 1, ply_index + 1, -beta, -alpha, time_limit, board_history);
+            let score = -self.negamax(new_board, depth - 1, ply_index + 1, -beta, -alpha, time_limit, board_history);
+
+            // pop the new position's hash from the board history
+            board_history.pop();
 
             // fail-hard beta cutoff
             if score >= beta {
