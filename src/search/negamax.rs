@@ -9,7 +9,7 @@ use crate::search::{MAX_PLY, Search};
 
 impl Search {
     /// Search the given position with iterative deepening.
-    pub fn iterative_search(&mut self, board: Board, max_depth: u64, time_limit: Duration, mut board_history: ArrayVec<u64, 300>) {
+    pub fn iterative_search(&mut self, board: Board, max_depth: u64, time_limit: Duration, mut board_history: ArrayVec<u64, 1000>) {
         // reset the stop flag to allow searching
         self.stop = false;
 
@@ -70,7 +70,7 @@ impl Search {
     ///
     /// Instead of implementing two routines for the maximizing and minimizing players, this method
     /// negates the scores for each recursive call, making minimax easier to implement.
-    pub fn negamax(&mut self, board: Board, depth: u64, ply_index: u64, mut alpha: i32, beta: i32, time_limit: Duration, board_history: &mut ArrayVec<u64, 300>) -> i32 {
+    pub fn negamax(&mut self, board: Board, depth: u64, ply_index: u64, mut alpha: i32, beta: i32, time_limit: Duration, board_history: &mut ArrayVec<u64, 1000>) -> i32 {
         // check if the max ply number is reached
         if ply_index as usize >= MAX_PLY {
             // the maximum number of plies is reached - return static evaluation to avoid overflows

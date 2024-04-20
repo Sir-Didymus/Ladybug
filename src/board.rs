@@ -75,7 +75,7 @@ impl Board {
     }
     
     /// Checks whether the position is a draw by threefold repetition, based on the given board history.
-    pub fn is_draw(&self, board_history: &ArrayVec<u64, 300>) -> bool {
+    pub fn is_draw(&self, board_history: &ArrayVec<u64, 1000>) -> bool {
         if board_history.is_empty() {
             return false;
         }
@@ -285,7 +285,7 @@ mod tests {
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
         
-        let mut board_history: ArrayVec<u64, 300> = ArrayVec::new();
+        let mut board_history: ArrayVec<u64, 1000> = ArrayVec::new();
         let board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 3 1").unwrap();
         
         board_history.push(zobrist::get_hash(&board.position));
