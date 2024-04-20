@@ -108,7 +108,7 @@ impl Search {
             };
         }
         
-        // check if the position is a draw
+        // check if the position is a draw by 3-fold repetition or the 50 move rule
          if board.is_draw(board_history) {
              return 0;
          }

@@ -74,8 +74,13 @@ impl Board {
         board
     }
     
-    /// Checks whether the position is a draw by threefold repetition, based on the given board history.
+    /// Checks whether the position is a draw by either threefold repetition or the 50 move rule, based on the given board history.
     pub fn is_draw(&self, board_history: &ArrayVec<u64, 1000>) -> bool {
+        // check for draw by 50 move role
+        if self.halfmove_clock >= 100 {
+            return true;
+        }
+        
         if board_history.is_empty() {
             return false;
         }
@@ -99,6 +104,8 @@ impl Board {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::field_reassign_with_default)]
+    
     use arrayvec::ArrayVec;
     use crate::board::bitboard::Bitboard;
     use crate::board::{Board, square};
@@ -293,6 +300,14 @@ mod tests {
         assert!(!board.is_draw(&board_history));
 
         board_history.push(zobrist::get_hash(&board.position));
+        assert!(board.is_draw(&board_history));
+        
+        board_history.pop();
+        
+        let mut board = Board::default();
+        board.halfmove_clock = 99;
+        assert!(!board.is_draw(&board_history));
+        board.halfmove_clock = 100;
         assert!(board.is_draw(&board_history));
     }
 }
