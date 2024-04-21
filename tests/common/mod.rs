@@ -55,7 +55,7 @@ pub fn setup() -> (Sender<Message>, Receiver<String>) {
     let mut ladybug = Ladybug::new(search_command_sender, output_sender.clone(), message_receiver);
 
     // spawn the Ladybug thread
-    thread::spawn(move || ladybug.run());
+    let _ = thread::Builder::new().name("ladybug".to_string()).spawn(move || ladybug.run());
 
     (message_sender, output_receiver)
 }
