@@ -20,9 +20,9 @@ pub const MAX_PLY: usize = 100;
 /// Encodes the commands the search can receive from Ladybug.
 pub enum SearchCommand {
     /// Search the given position for the given amount of milliseconds.
-    SearchTime(Board, ArrayVec<u64, 1000>, u64),
+    SearchTime(Board, ArrayVec<u64, 800>, u64),
     /// Search the given position until the given depth is reached.
-    SearchDepth(Board, ArrayVec<u64, 1000>, u64),
+    SearchDepth(Board, ArrayVec<u64, 800>, u64),
     /// Perform a perft for the given position up to the specified depth.
     Perft(Position, u64),
     /// Stop the search immediately.
@@ -138,7 +138,7 @@ impl Search {
     }
 
     /// Handles the various "Search" commands.
-    fn handle_search(&mut self, board: Board, depth_limit: Option<u64>, time_limit: Option<u64>, board_history: ArrayVec<u64, 1000>) {
+    fn handle_search(&mut self, board: Board, depth_limit: Option<u64>, time_limit: Option<u64>, board_history: ArrayVec<u64, 800>) {
         let move_list = move_gen::generate_moves(board.position);
         if move_list.is_empty() {
             self.send_output(String::from("info string no legal moves"));

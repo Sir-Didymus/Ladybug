@@ -27,7 +27,7 @@ pub struct Game {
     /// The current board.
     board: Board,
     /// Contains the hashes of all positions that have been on the board before.
-    board_history: ArrayVec<u64, 1000>,
+    board_history: ArrayVec<u64, 800>,
 }
 
 /// The two types of messages Ladybug can receive.

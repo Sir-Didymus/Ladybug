@@ -75,7 +75,7 @@ impl Board {
     }
     
     /// Checks whether the position is a draw by either threefold repetition or the 50 move rule, based on the given board history.
-    pub fn is_draw(&self, board_history: &ArrayVec<u64, 1000>) -> bool {
+    pub fn is_draw(&self, board_history: &ArrayVec<u64, 800>) -> bool {
         // check for draw by 50 move role
         if self.halfmove_clock >= 100 {
             return true;
@@ -292,7 +292,7 @@ mod tests {
         lookup.initialize_tables();
         let _ = LOOKUP_TABLE.set(lookup);
         
-        let mut board_history: ArrayVec<u64, 1000> = ArrayVec::new();
+        let mut board_history: ArrayVec<u64, 800> = ArrayVec::new();
         let board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 3 1").unwrap();
         
         board_history.push(zobrist::get_hash(&board.position));
