@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use arrayvec::ArrayVec;
 use crate::board::file::{File, NUM_FILES};
 use crate::board::rank::{NUM_RANKS, Rank};
-use crate::board::square::{Square};
+use crate::board::square::{NUM_SQUARES, Square};
 
 /// A bitboard representing the state of the board for one type of piece for one color.
 ///
@@ -66,6 +66,17 @@ impl Bitboard {
             bb_value &= bb_value - 1;
         }
         active_bits
+    }
+    
+    /// Returns the flipped bitboard.
+    pub fn flip(&self) -> Bitboard {
+        let mut flipped_bb = Bitboard::new(0);
+        for square_index in 0..NUM_SQUARES {
+            if self.get_bit(Square::new(square_index)) {
+                flipped_bb.set_bit(Square::new(square_index ^ 56));
+            }
+        }
+        flipped_bb 
     }
 }
 
@@ -175,6 +186,15 @@ mod tests {
             bitboard.pop_bit(Square::new(i));
             assert_eq!(0, (1 << i) & bitboard.value); // test that square is unset - I avoid using get_square here so the tests are independent of each other
         }
+    }
+    
+    #[test]
+    fn test_flip() {
+        assert_eq!(0, Bitboard::new(0).flip().value);
+        assert_eq!(0x40000000000, Bitboard::new(0x40000).flip().value);
+        assert_eq!(0x10005, Bitboard::new(0x500010000000000).flip().value);
+        assert_eq!(0x480020400004, Bitboard::new(0x400402000480000).flip().value);
+        assert_eq!(0xffffffffffffffff, Bitboard::new(0xffffffffffffffff).flip().value);
     }
     
     #[test]
