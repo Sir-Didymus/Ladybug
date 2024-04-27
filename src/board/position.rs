@@ -410,6 +410,33 @@ impl Position {
     pub fn get_num_pieces(&self, piece: Piece, color: Color) -> u8 {
         self.pieces[color.to_index() as usize][piece.to_index() as usize].get_num_active_bits()
     }
+    
+    /// Returns a color flipped position.
+    /// See https://www.chessprogramming.org/Color_Flipping
+    pub fn color_flip(&self) -> Position {
+        let mut flipped = Position::default();
+        
+        // swap pieces and color of pieces
+        for color_index in 0..NUM_COLORS as usize {
+            for piece_index in 0..NUM_PIECES as usize {
+                flipped.pieces[color_index][piece_index] = self.pieces[Color::from_index(color_index as u8).other().to_index() as usize][piece_index].flip()
+            }
+        }
+        
+        // swap color to move
+        flipped.color_to_move = self.color_to_move.other();
+        
+        // swap castling rights
+        flipped.castling_rights[Color::White.to_index() as usize] = self.castling_rights[Color::Black.to_index() as usize];
+        flipped.castling_rights[Color::Black.to_index() as usize] = self.castling_rights[Color::White.to_index() as usize];
+        
+        // swap en passant
+        if let Some(en_passant) = self.en_passant {
+            flipped.en_passant = Some(Square::new(en_passant.index ^ 56));
+        }
+        
+        flipped
+    }
 }
 
 /// Prints the position with '.' marking empty squares, capital letters marking white pieces,
@@ -1218,5 +1245,64 @@ mod tests {
         assert_eq!(0, position.get_num_pieces(Piece::Queen, Color::Black));
         assert_eq!(1, position.get_num_pieces(Piece::King, Color::White));
         assert_eq!(1, position.get_num_pieces(Piece::King, Color::Black));
+    }
+    
+    #[test]
+    fn test_color_flip() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+        
+        // position 1
+        assert_eq!(Board::from_fen("8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1").unwrap().position, Board::from_fen("8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1").unwrap().position, Board::from_fen("8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1").unwrap().position.color_flip());
+
+        // position 2
+        assert_eq!(Board::from_fen("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1").unwrap().position, Board::from_fen("8/5k2/8/2Pp4/2B5/1K6/8/8 w - d6 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("8/5k2/8/2Pp4/2B5/1K6/8/8 w - d6 0 1").unwrap().position, Board::from_fen("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1").unwrap().position.color_flip());
+
+        // position 3
+        assert_eq!(Board::from_fen("5k2/8/8/8/8/8/8/4K2R w K - 0 1").unwrap().position, Board::from_fen("4k2r/8/8/8/8/8/8/5K2 b k - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("4k2r/8/8/8/8/8/8/5K2 b k - 0 1").unwrap().position, Board::from_fen("5k2/8/8/8/8/8/8/4K2R w K - 0 1").unwrap().position.color_flip());
+
+        // position 4
+        assert_eq!(Board::from_fen("3k4/8/8/8/8/8/8/R3K3 w Q - 0 1").unwrap().position, Board::from_fen("r3k3/8/8/8/8/8/8/3K4 b q - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("r3k3/8/8/8/8/8/8/3K4 b q - 0 1").unwrap().position, Board::from_fen("3k4/8/8/8/8/8/8/R3K3 w Q - 0 1").unwrap().position.color_flip());
+        
+        // position 5
+        assert_eq!(Board::from_fen("r3k2r/1b4bq/8/8/8/8/7B/R3K2R w KQkq - 0 1").unwrap().position, Board::from_fen("r3k2r/7b/8/8/8/8/1B4BQ/R3K2R b KQkq - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("r3k2r/7b/8/8/8/8/1B4BQ/R3K2R b KQkq - 0 1").unwrap().position, Board::from_fen("r3k2r/1b4bq/8/8/8/8/7B/R3K2R w KQkq - 0 1").unwrap().position.color_flip());
+
+        // position 6
+        assert_eq!(Board::from_fen("r3k2r/8/3Q4/8/8/5q2/8/R3K2R b KQkq - 0 1").unwrap().position, Board::from_fen("r3k2r/8/5Q2/8/8/3q4/8/R3K2R w KQkq - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("r3k2r/8/5Q2/8/8/3q4/8/R3K2R w KQkq - 0 1").unwrap().position, Board::from_fen("r3k2r/8/3Q4/8/8/5q2/8/R3K2R b KQkq - 0 1").unwrap().position.color_flip());
+
+        // position 7
+        assert_eq!(Board::from_fen("2K2r2/4P3/8/8/8/8/8/3k4 w - - 0 1").unwrap().position, Board::from_fen("3K4/8/8/8/8/8/4p3/2k2R2 b - - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("3K4/8/8/8/8/8/4p3/2k2R2 b - - 0 1").unwrap().position, Board::from_fen("2K2r2/4P3/8/8/8/8/8/3k4 w - - 0 1").unwrap().position.color_flip());
+
+        // position 8
+        assert_eq!(Board::from_fen("8/8/1P2K3/8/2n5/1q6/8/5k2 b - - 0 1").unwrap().position, Board::from_fen("5K2/8/1Q6/2N5/8/1p2k3/8/8 w - - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("5K2/8/1Q6/2N5/8/1p2k3/8/8 w - - 0 1").unwrap().position, Board::from_fen("8/8/1P2K3/8/2n5/1q6/8/5k2 b - - 0 1").unwrap().position.color_flip());
+
+        // position 9
+        assert_eq!(Board::from_fen("4k3/1P6/8/8/8/8/K7/8 w - - 0 1").unwrap().position, Board::from_fen("8/k7/8/8/8/8/1p6/4K3 b - - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("8/k7/8/8/8/8/1p6/4K3 b - - 0 1").unwrap().position, Board::from_fen("4k3/1P6/8/8/8/8/K7/8 w - - 0 1").unwrap().position.color_flip());
+
+        // position 10
+        assert_eq!(Board::from_fen("8/P1k5/K7/8/8/8/8/8 w - - 0 1").unwrap().position, Board::from_fen("8/8/8/8/8/k7/p1K5/8 b - - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("8/8/8/8/8/k7/p1K5/8 b - - 0 1").unwrap().position, Board::from_fen("8/P1k5/K7/8/8/8/8/8 w - - 0 1").unwrap().position.color_flip());
+
+        // position 11
+        assert_eq!(Board::from_fen("K1k5/8/P7/8/8/8/8/8 w - - 0 1").unwrap().position, Board::from_fen("8/8/8/8/8/p7/8/k1K5 b - - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("8/8/8/8/8/p7/8/k1K5 b - - 0 1").unwrap().position, Board::from_fen("K1k5/8/P7/8/8/8/8/8 w - - 0 1").unwrap().position.color_flip());
+
+        // position 12
+        assert_eq!(Board::from_fen("8/k1P5/8/1K6/8/8/8/8 w - - 0 1").unwrap().position, Board::from_fen("8/8/8/8/1k6/8/K1p5/8 b - - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("8/8/8/8/1k6/8/K1p5/8 b - - 0 1").unwrap().position, Board::from_fen("8/k1P5/8/1K6/8/8/8/8 w - - 0 1").unwrap().position.color_flip());
+
+        // position 13
+        assert_eq!(Board::from_fen("8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1").unwrap().position, Board::from_fen("8/5k2/8/5N2/5Q2/2K5/8/8 w - - 0 1").unwrap().position.color_flip());
+        assert_eq!(Board::from_fen("8/5k2/8/5N2/5Q2/2K5/8/8 w - - 0 1").unwrap().position, Board::from_fen("8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1").unwrap().position.color_flip());
     }
 }
