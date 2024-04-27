@@ -42,6 +42,7 @@ fn evaluate_material(position: Position) -> i32 {
 #[cfg(test)]
 mod tests {
     use crate::board::Board;
+    use crate::evaluation;
     use crate::evaluation::{evaluate_material};
     use crate::lookup::LOOKUP_TABLE;
     use crate::lookup::lookup_table::LookupTable;
@@ -70,5 +71,92 @@ mod tests {
         // Black is missing a knight - Black to move
         let position = Board::from_fen("rnbqkb1r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1").unwrap().position;
         assert!(evaluate_material(position) < -200);
+    }
+    
+    #[test]
+    fn test_evaluation_symmetry() {
+        let mut lookup = LookupTable::default();
+        lookup.initialize_tables();
+        let _ = LOOKUP_TABLE.set(lookup);
+
+        // position 1
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 2
+        let position = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNB1KBNR w KQkq - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 3
+        let position = Board::from_fen("rnbqkb1r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 4
+        let position = Board::from_fen("8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 5
+        let position = Board::from_fen("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 6
+        let position = Board::from_fen("5k2/8/8/8/8/8/8/4K2R w K - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 7
+        let position = Board::from_fen("3k4/8/8/8/8/8/8/R3K3 w Q - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 8
+        let position = Board::from_fen("r3k2r/1b4bq/8/8/8/8/7B/R3K2R w KQkq - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 9
+        let position = Board::from_fen("r3k2r/8/3Q4/8/8/5q2/8/R3K2R b KQkq - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 10
+        let position = Board::from_fen("2K2r2/4P3/8/8/8/8/8/3k4 w - - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 11
+        let position = Board::from_fen("8/8/1P2K3/8/2n5/1q6/8/5k2 b - - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 12
+        let position = Board::from_fen("4k3/1P6/8/8/8/8/K7/8 w - - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 13
+        let position = Board::from_fen("8/P1k5/K7/8/8/8/8/8 w - - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 14
+        let position = Board::from_fen("K1k5/8/P7/8/8/8/8/8 w - - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 15
+        let position = Board::from_fen("8/k1P5/8/1K6/8/8/8/8 w - - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
+
+        // position 16
+        let position = Board::from_fen("8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1").unwrap().position;
+        let flipped = position.color_flip();
+        assert_eq!(evaluation::evaluate(position), evaluation::evaluate(flipped));
     }
 }
