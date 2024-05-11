@@ -7,6 +7,28 @@
 //!
 //! The values here are taken directly from [PESTO's Evaluation Function](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function).
 
+use crate::board::color::Color;
+use crate::board::piece::Piece;
+use crate::board::square::Square;
+
+/// Returns the relative middlegame value of the given piece, based on its color and square.
+pub fn get_mg_value(piece: Piece, square: Square, color: Color) -> i32 {
+    let square_index = match color {
+        Color::White => square.index ^ 56,
+        Color::Black => square.index,
+    };
+    MG_PIECE_BASE_VALUES[piece.to_index() as usize] + MG_PST_VALUES[piece.to_index() as usize][square_index as usize]
+}
+
+/// Returns the relative endgame value of the given piece, based on its color and square.
+pub fn get_eg_value(piece: Piece, square: Square, color: Color) -> i32 {
+    let square_index = match color {
+        Color::White => square.index ^ 56,
+        Color::Black => square.index,
+    };
+    EG_PIECE_BASE_VALUES[piece.to_index() as usize] + EG_PST_VALUES[piece.to_index() as usize][square_index as usize]
+}
+
 /// The base values of the pieces during the middle game.
 const MG_PIECE_BASE_VALUES: [i32; 6] = [
     82,
@@ -170,24 +192,24 @@ const EG_QUEEN_VALUES: [i32; 64] = [
 
 /// Middle game values for kings.
 const MG_KING_VALUES: [i32; 64] = [
-    -28,   0,  29,  12,  59,  44,  43,  45,
-    -24, -39,  -5,   1, -16,  57,  28,  54,
-    -13, -17,   7,   8,  29,  56,  47,  57,
-    -27, -27, -16, -16,  -1,  17,  -2,   1,
-    -9, -26,  -9, -10,  -2,  -4,   3,  -3,
-    -14,   2, -11,  -2,  -5,   2,  14,   5,
-    -35,  -8,  11,   2,   8,  15,  -3,   1,
-    -1, -18,  -9,  10, -15, -25, -31, -50,
+    -65,  23,  16, -15, -56, -34,   2,  13,
+    29,  -1, -20,  -7,  -8,  -4, -38, -29,
+    -9,  24,   2, -16, -20,   6,  22, -22,
+    -17, -20, -12, -27, -30, -25, -14, -36,
+    -49,  -1, -27, -39, -46, -44, -33, -51,
+    -14, -14, -22, -46, -44, -30, -15, -27,
+    1,   7,  -8, -64, -43, -16,   9,   8,
+    -15,  36,  12, -54,   8, -28,  24,  14,
 ];
 
 /// Endgame values for kings.
 const EG_KING_VALUES: [i32; 64] = [
-    -9,  22,  22,  27,  27,  19,  10,  20,
-    -17,  20,  32,  41,  58,  25,  30,   0,
-    -20,   6,   9,  49,  47,  35,  19,   9,
-    3,  22,  24,  45,  57,  40,  57,  36,
-    -18,  28,  19,  47,  31,  34,  39,  23,
-    -16, -27,  15,   6,   9,  17,  10,   5,
-    -22, -23, -30, -16, -16, -23, -36, -32,
-    -33, -28, -22, -43,  -5, -32, -20, -41,
+    -74, -35, -18, -18, -11,  15,   4, -17,
+    -12,  17,  14,  17,  17,  38,  23,  11,
+    10,  17,  23,  15,  20,  45,  44,  13,
+    -8,  22,  24,  27,  26,  33,  26,   3,
+    -18,  -4,  21,  24,  27,  23,   9, -11,
+    -19,  -3,  11,  21,  23,  16,   7,  -9,
+    -27, -11,   4,  13,  14,   4,  -5, -17,
+    -53, -34, -21, -11, -28, -14, -24, -43
 ];
