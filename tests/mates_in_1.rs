@@ -81,3 +81,11 @@ fn puzzle_10() {
     common::go_position(&sender, "4N1k1/5p2/6p1/p5Q1/2p4P/3n2P1/5PbK/q7 b - - 1 1", 1);
     common::assert_result(&receiver, 1, "bestmove a1h1");
 }
+
+#[test]
+fn puzzle_11() {
+    let (sender, receiver) =  common::setup();
+
+    common::go_position(&sender, "bNB1K3/krN5/rq6/pp1ppppp/PPpBPPPn/2PPb3/2QR4/n1R5 w - - 9 62", 1);
+    common::assert_result(&receiver, 1, "bestmove b8c6");
+}
