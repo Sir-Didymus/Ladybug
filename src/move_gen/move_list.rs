@@ -81,12 +81,13 @@ impl MoveList {
         }
     }
     
-    /// Returns a new move list that only contains capture moves.
+    /// Returns a new move list that only contains capture and promotion moves.
     pub fn get_captures(&self) -> MoveList {
         let mut capture_list = MoveList::default();
 
         for ply in &self.moves {
-            if Ply::decode(*ply).captured_piece.is_some() {
+            let ply_decoded = Ply::decode(*ply);
+            if ply_decoded.captured_piece.is_some() || ply_decoded.promotion_piece.is_some() {
                 capture_list.moves.push(*ply);
             }
         }
